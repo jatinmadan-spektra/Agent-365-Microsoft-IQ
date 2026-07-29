@@ -2,26 +2,26 @@
   {
     "Name": "Agent 365 & Microsoft IQ: Enterprise AI Governance for M365",
     "Language": "English",
-    "BaseURL": "https://github.com/CloudLabsAI-Azure/Agent365-MicrosoftIQ/tree/main",
+    "BaseURL": "https://github.com/jatinmadan-spektra/Agent-365-Microsoft-IQ",
     "Files": [
       {
-        "RawFilePath": "https://raw.githubusercontent.com/CloudLabsAI-Azure/Agent365-MicrosoftIQ/main/labguide/getting-started.md",
+        "RawFilePath": "https://raw.githubusercontent.com/jatinmadan-spektra/Agent-365-Microsoft-IQ/refs/heads/main/Getting-started.md",
         "Order": 1
       },
       {
-        "RawFilePath": "https://raw.githubusercontent.com/CloudLabsAI-Azure/Agent365-MicrosoftIQ/main/labguide/Exercise%201.md",
+        "RawFilePath": "https://raw.githubusercontent.com/jatinmadan-spektra/Agent-365-Microsoft-IQ/refs/heads/main/Exercise-1.md",
         "Order": 2
       },
       {
-        "RawFilePath": "https://raw.githubusercontent.com/CloudLabsAI-Azure/Agent365-MicrosoftIQ/main/labguide/Exercise%202.md",
+        "RawFilePath": "https://raw.githubusercontent.com/jatinmadan-spektra/Agent-365-Microsoft-IQ/refs/heads/main/Exercise-2.md",
         "Order": 3
       },
       {
-        "RawFilePath": "https://raw.githubusercontent.com/CloudLabsAI-Azure/Agent365-MicrosoftIQ/main/labguide/Exercise%203.md",
+        "RawFilePath": "https://raw.githubusercontent.com/jatinmadan-spektra/Agent-365-Microsoft-IQ/refs/heads/main/Exercise-3.md",
         "Order": 4
       },
       {
-        "RawFilePath": "https://raw.githubusercontent.com/CloudLabsAI-Azure/Agent365-MicrosoftIQ/main/labguide/Exercise%204.md",
+        "RawFilePath": "https://raw.githubusercontent.com/jatinmadan-spektra/Agent-365-Microsoft-IQ/refs/heads/main/Exercise-4.md",
         "Order": 5
       }
     ]
