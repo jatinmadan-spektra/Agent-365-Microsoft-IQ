@@ -61,30 +61,25 @@ Copilot Studio is where you define what the agent does and says. This is low-cod
 1. If prompted, sign in with the following credentials:
 
    - **Email/Username:** <inject key="AzureAdUserEmail"></inject>
-   - **Password:** <inject key="AzureAdUserPassword"></inject>
+   
+   - **Temporary Access Pass:** <inject key="AzureAdUserPassword"></inject>
 
-1. Confirm the correct environment is selected in the top-right environment picker. If multiple environments are listed, select the environment provided for this lab.
+1. New Copilot Studio experience pop up will appear, click on **Try now**.
 
-    ![Copilot Studio home page with the environment picker in the top right](./media/a365-ex4-t1-01.png)
+    ![](./media/ex4-1.png)
 
-    >**Note:** Copilot Studio agents live inside a Power Platform environment. If you create an agent in the wrong environment, it will not appear where you expect it later, and admin approval routes differently.
+1. On Copilot home screen, select **Agent**
 
-1. Select **Create**, then select **New agent**.
+    ![](./media/ex4-2.png)
+  
+1. Enter **Name (1)** as **Finley Expense Assistant** for your agent.
 
-1. Enter the following details for your agent:
-
-   - **Name:** **Finley Expense Assistant <inject key="DeploymentID" enableCopy="false"/>**
-   - **Description:** **Helps Contoso employees check expense policy and follow up on expense report status.**
-
-1. In the **Instructions** field, enter the following system prompt:
+1. In the **Instructions (2)** field, enter the following system prompt:
 
     ```
     You are Finley, Contoso's expense assistant. Help employees understand expense policy and follow up on the status of submitted expense reports. Be concise and factual. If you are unsure about a policy detail, say so rather than guessing.
     ```
-
-    ![New agent configuration page with name, description, and instructions filled in](./media/a365-ex4-t1-02.png)
-
-    >**Note:** The instructions become the agent's system prompt, which defines its default behaviour, persona, and operating boundaries. This value is recorded in the `Instructions` column of the Defender `AgentsInfo` table, which is how a security analyst can later review what an agent was told to do.
+    ![](./media/ex4-3.png)
 
 1. Select **Create**.
 
@@ -92,114 +87,76 @@ Copilot Studio is where you define what the agent does and says. This is low-cod
 
     ![Copilot Studio authoring canvas for the newly created agent](./media/a365-ex4-t1-03.png)
 
-    >**Note:** The Entra Agent ID for this agent was created **at this moment**, not when you publish later. Identity provisioning happens at agent creation time. Publishing makes the agent available to users, but the identity already exists and is already visible in Microsoft Entra, the Agent 365 registry, and the Microsoft 365 admin center. You will verify this in Task 3.
-
 ### Task 2: Add a Work IQ MCP tool and test the agent
 
 Right now your agent can talk about expenses but cannot act. In this task you give it a real capability by connecting a Work IQ MCP tool, then prove it works.
 
-1. In your agent, select the **Tools** tab, then select **Add Tool**.
+1. In your agent, select the **Tools** tab from the right pane.
 
-    ![Agent Tools tab with the Add Tool button](./media/a365-ex4-t2-01.png)
+    ![](./media/ex4-5.png)
 
-1. On the **Add tool** page, select **Model Context Protocol** to see the Work IQ MCP servers and other MCP servers.
+1. On the **Add a tool** page, select **Model Context Protocol (MCP) (1)** to see the Work IQ MCP servers and other MCP servers.
 
-    ![Add tool page with Model Context Protocol selected](./media/a365-ex4-t2-02.png)
+1. Select **Work IQ Mail (Preview)** from the results.
 
-    >**Note:** This catalog contains the Work IQ MCP servers plus other MCP servers available in your tenant. The Work IQ servers include **Work IQ Mail**, **Work IQ Calendar**, and **Work IQ Teams**. Each server exposes granular, auditable tools rather than broad access. If you do not see the Work IQ servers, try filtering by **Provider** and selecting **Microsoft**.
+    ![](./media/ex4-6.png)
 
-1. Type **mail** in the search box.
+    >Note: If not visible, type **Work IQ Mail** in the search box.
 
-1. Select **Work IQ Mail** from the results.
-
-    ![Search results showing the Work IQ Mail MCP server](./media/a365-ex4-t2-03.png)
-
-1. Expand the **connection** dropdown and select **Create New Connection**.
+1. Expand the **connection (1)** dropdown and select **Create New Connection (2)**.
+    
+    ![](./media/ex4-7.png)
 
 1. Select **Create**.
 
 1. When prompted, provide your credentials and complete the sign-in process:
 
    - **Email/Username:** <inject key="AzureAdUserEmail"></inject>
+
    - **Password:** <inject key="AzureAdUserPassword"></inject>
 
-    ![Sign-in dialog for the Work IQ Mail MCP server connection](./media/a365-ex4-t2-04.png)
-
-1. Select **Add and Configure** to complete adding the tool.
-
-    >**Important:** Do not skip this step. Creating the connection alone does not attach the tool to your agent. **Add and Configure** is what completes the process.
-
-    >**Note:** Each Work IQ tool and MCP server is represented by a **permission on the Agent 365 application**. The agent gains access to the server only after this consent is granted, which is what makes every tool call authorized rather than implicit.
+1. Select **Add** to complete adding the tool.
+    
+    ![](./media/ex4-8.png)
 
 1. Confirm **Work IQ Mail** now appears in your agent's tools list.
 
-    ![Agent tools list showing Work IQ Mail added](./media/a365-ex4-t2-05.png)
+    ![](./media/ex4-9.png)
 
-1. Now test the tool. Select **Test** to open the test pane.
+1. Now test the tool. Select **Preview (1)** to open the test pane.
 
-1. Enter the following prompt:
+1. Enter the following prompt (2):
 
     ```
     Send an email to <inject key="AzureAdUserEmail"></inject> with the subject "Finley test" and ask how the hands-on lab is going.
     ```
+1. Press **Enter (3)**.
+     
+     ![](./media/ex4-10.png)
 
-1. Press **Enter**.
-
-1. When asked to allow the Work IQ tool to connect and use services, select **Allow**.
-
-    ![Test pane showing the permission prompt to allow the Work IQ tool](./media/a365-ex4-t2-06.png)
+     >Note: If asked to allow the Work IQ tool to connect and use services, select **Allow**.
 
 1. After a few moments, check your mailbox and confirm you received the email.
 
-    ![Outlook inbox showing the test email sent by the agent](./media/a365-ex4-t2-07.png)
-
-    >**Note:** This is the moment your agent stops being a chatbot and becomes an agent. It did not describe sending an email; it called a governed tool that actually sent one. Every such call is traced, which you will verify in Task 6.
-
-    >**Note:** Most Power Platform connectors use **on-behalf-of (OBO)** authentication, meaning the agent acts with **your** permissions rather than its own. In audit logs the action appears as performed by the user, with agent context attached. This is why the email arrives from your mailbox rather than an agent mailbox.
+    ![](./media/ex4-11.png)
 
 1. Select **Publish** in the top menu bar to publish your agent for the first time.
 
-    >**Note:** You must publish the agent at least once before it can be connected to Teams. Publishing also matters for the next task: **connector permissions are attached to the agent's Entra Agent ID when a maker publishes the agent**, not when the tool is added. If you skip publishing, Task 3 will show an identity with no connector permissions on it.
-
-### Task 3: Verify the agent's Entra Agent ID and connector permissions
+### Task 3: Verify the agent's Entra Agent ID
 
 This is the task that ties this exercise back to the first two. Copilot Studio created an Entra Agent ID for your agent automatically, and that identity is subject to the policies you already wrote.
 
-1. In Copilot Studio, open your agent and select **Settings**.
-
-1. Select **Advanced**.
-
-1. Expand the **Metadata** section and locate the GUID shown under **Entra Agent ID**. Copy this value.
-
-    ![Copilot Studio agent settings showing the Entra Agent ID under Advanced Metadata](./media/a365-ex4-t3-01.png)
-
-    >**Note:** Starting **July 2026**, all new agents must have Microsoft Entra Agent IDs and you can no longer opt out of automatic agent identity creation. Agents created before that rollout continue to use app registrations and will be migrated over time. Governance capabilities work for both during the transition.
-
-1. Switch to the Microsoft Entra admin center tab, or navigate to:
+1. Navigate to the Microsoft Entra admin center tab.
 
     ```
     https://entra.microsoft.com
     ```
 
-1. Navigate to **Entra ID** > **Agents** > **Agent identities**.
+1. Navigate to **Entra ID (1)** > **Agents (2)** > **Agent identities (3)**.
 
-1. Search for the Entra Agent ID value you copied, and select the matching agent identity.
+1. You should now see **two** agent identities in this list (4): **finley-<inject key="DeploymentID" enableCopy="false"/> Identity** from Exercise 1, and the identity for the Copilot Studio agent you just built. Two very different build paths, one governance surface.
 
-    ![Agent identities page with the Copilot Studio agent identity located](./media/a365-ex4-t3-02.png)
-
-    >**Note:** You should now see **two** agent identities in this list: **finley-<inject key="DeploymentID" enableCopy="false"/> Identity** from Exercise 1, and the identity for the Copilot Studio agent you just built. Two very different build paths, one governance surface.
-
-1. Review the agent identity's **API permissions**. Note that the Power Platform connector permissions the agent uses appear here as first-class API permissions.
-
-    ![Agent identity API permissions showing connector scopes](./media/a365-ex4-t3-03.png)
-
-    >**Note:** This visibility is deliberate. Before it, an Entra or Microsoft 365 admin had to open the Power Platform admin center to discover which connectors an agent could call. Now those scopes are visible in Entra and, crucially, can be targeted by Conditional Access policies for network location, device compliance, or risk conditions.
-
-1. Note the **blueprint** this identity belongs to.
-
-    >**Note:** Unlike pro-code agents, where each agent gets its own blueprint, **all Copilot Studio app-based agents in your tenant share a single blueprint**. Compare this with Exercise 1, where the CLI created a dedicated **finley-<inject key="DeploymentID" enableCopy="false"/> Blueprint** for one agent. Record whatever blueprint name your tenant displays for the Copilot Studio agent; the exact display name varies by service build.
-
-    >**Note:** Because every Copilot Studio agent shares one blueprint, applying a Conditional Access policy at the blueprint level covers every Copilot Studio agent in the tenant at once, including agents that do not exist yet. This is the same scaling principle as the attribute-driven policy you built in Exercise 2. Permissions for these agents are managed at the Power Platform admin center level, and DLP and advanced connector policies apply automatically.
+    ![](./media/ex4-12.png)
 
 1. Optionally, assign the **AgentApprovalStatus** custom security attribute to this identity with the value **Finance_Approved**, following the same steps as Exercise 2, Task 3. This brings the agent into scope of your attribute-driven policy.
 
@@ -211,15 +168,15 @@ Now you give the agent a place to work. Publishing happens in two stages: first 
 
 1. Return to the Microsoft Copilot Studio tab and open your agent.
 
-1. On the top menu bar, select **Channels**.
+1. On the top menu bar, select **dropdown** next to publish.
+  
+    ![](./media/ex4-13.png)
 
-1. Select the **Teams and Microsoft 365 Copilot** tile to open its configuration panel.
+1. Select the **Teams + Microsoft 365** tile to open its configuration panel.
 
-    ![Channels page with the Teams and Microsoft 365 Copilot tile](./media/a365-ex4-t4-01.png)
+    ![](./media/a365-ex4-t4-01.png)
 
 1. Under **Turn on Microsoft 365**, ensure **Make agent available in Microsoft 365 Copilot** is selected.
-
-    >**Note:** If you clear this option, the agent is only available in Teams and not in Microsoft 365 Copilot.
 
 1. Select **Add channel**.
 
@@ -227,7 +184,8 @@ Now you give the agent a place to work. Publishing happens in two stages: first 
 
 1. Select **Edit details** and provide the information users will see in the app store:
 
-   - Confirm the agent **icon**, **colour**, and **short description**
+   - Confirm the agent **short description** and **Long Description**
+   
    - Select **More** and add a **Developer name** and **Website**
 
 1. Select **Save**.
