@@ -2,19 +2,32 @@
 
 ### Estimated Duration: 60 minutes
 
-Finley has an identity, policies, and compute. In this final exercise you give it real organizational context using Microsoft IQ, publish it to Microsoft Teams through an IT-approved flow, audit what it actually did, and then retire it.
+Finley has an identity, policies, and compute. In this final exercise you build a low-code agent, ground it in Microsoft IQ, publish it to Microsoft Teams through an IT-approved flow, audit what it actually did, and then retire it.
 
 ## Overview
 
 **Microsoft IQ** is the unified intelligence layer for enterprise AI. It has four capabilities: **Work IQ** (how people work), **Fabric IQ** (the live state of the business), **Foundry IQ** (curated institutional knowledge), and **Web IQ** (real-world intelligence from the web). This exercise uses **Work IQ**, because Contoso's expense agent needs Microsoft 365 context: mail, calendar, and files.
 
-Work IQ is built on three layers: **Data** unifies signals from files, emails, meetings, and chats; **Context** builds persistent understanding of how people and teams work; and **Skills and Tools** lets agents reason and act through **Work IQ MCP tools**, while the Agent 365 control plane keeps every action observable and governed.
+Work IQ is built on three layers: **Data** unifies signals from files, emails, meetings, chats, and business systems; **Memory** builds persistent understanding of how people and teams work; and **Inference** brings together models, skills, and tools so agents can reason and act through **Work IQ MCP tools**, while the Agent 365 control plane keeps every action observable and governed.
 
 The critical governance point in this exercise is that Copilot Studio **automatically creates a Microsoft Entra Agent ID for every new agent**. That means the agent you build here is not an ungoverned side project; it inherits the identity model from Exercise 1 and falls under the Conditional Access policies you wrote in Exercise 2 without any extra work. Connector permissions appear as API permissions on that agent identity, so you can see and target them from Microsoft Entra.
 
->**Note:** Work IQ MCP is a **preview** feature and requires a Microsoft 365 Copilot license, which is pre-staged in your lab. If Work IQ MCP tools are unavailable in your lab tenant's region, substitute any standard Copilot Studio connector tool. The publishing, approval, observability, and lifecycle tasks are unaffected.
+>**Note:** This exercise deliberately builds a **second agent**, separate from Finley. Exercises 1 to 3 governed a pro-code agent provisioned through the Agent 365 CLI. This exercise governs a **low-code Copilot Studio agent**, which receives its identity automatically. The point is that both paths land in the same control plane: the same registry, the same Conditional Access policies, the same Defender tables. Do **not** delete Finley or the Conditional Access policies from Exercises 2 and 3 - this exercise depends on them.
 
-In this exercise you will:
+## Prerequisites: licensing and roles
+
+| Requirement | Needed for | Verified in this lab tenant |
+| --- | --- | --- |
+| **Microsoft 365 Copilot license** | Required to add Work IQ MCP servers to an agent in Copilot Studio | Yes - `M365_COPILOT_APPS`, `M365_COPILOT_BUSINESS_CHAT`, `M365_COPILOT_TEAMS`, `M365_COPILOT_SHAREPOINT` all provisioned |
+| **Copilot Studio access** | Tasks 1 to 4 | Yes - `COPILOT_STUDIO_IN_COPILOT_FOR_M365` and `POWER_VIRTUAL_AGENTS_O365_P3` provisioned |
+| **Microsoft Defender for AI** | Advanced hunting in Task 6 | Yes - `DEFENDER_FOR_AI` provisioned |
+| **AI Administrator** or **Global Administrator** | Approving agent requests and lifecycle actions in Tasks 5 and 7 | Yes - Global Administrator |
+
+>**Note:** **Work IQ MCP is a preview feature.** Copilot Studio currently offers only the preview version; general availability is coming. When Work IQ reaches GA in Copilot Studio, the Work IQ API transitions to a **usage-based (consumptive) billing model**, so cost management becomes relevant in production.
+
+>**Note:** If Work IQ MCP tools are unavailable in your lab tenant's region, substitute any standard Copilot Studio connector tool. The publishing, approval, observability, and lifecycle tasks in Tasks 4 to 7 are unaffected. Administrators can also allow or block individual MCP servers in the Microsoft 365 admin center under **Agents and Tools**; if a server has been blocked tenant-wide it will not appear in the catalog. Microsoft notes that this allow/block capability **might not be available in every region yet**.
+
+## In this exercise you will
 
 - Create an agent in Microsoft Copilot Studio
 - Ground it in Microsoft IQ by adding a Work IQ MCP tool and testing it
@@ -36,6 +49,7 @@ In this exercise you will:
 
 ### Task 1: Create an agent in Microsoft Copilot Studio
 
+```admin.powerplatform.com login```
 Copilot Studio is where you define what the agent does and says. This is low-code configuration, not programming.
 
 1. On the lab virtual machine, open a new browser tab and navigate to Microsoft Copilot Studio:
@@ -70,7 +84,7 @@ Copilot Studio is where you define what the agent does and says. This is low-cod
 
     ![New agent configuration page with name, description, and instructions filled in](./media/a365-ex4-t1-02.png)
 
-    >**Note:** The instructions become the agent's system prompt, which defines its default behaviour, persona, and operating boundaries. This value is also recorded in the `Instructions` column of the Defender `AgentsInfo` table, which is how a security analyst can later review what an agent was told to do.
+    >**Note:** The instructions become the agent's system prompt, which defines its default behaviour, persona, and operating boundaries. This value is recorded in the `Instructions` column of the Defender `AgentsInfo` table, which is how a security analyst can later review what an agent was told to do.
 
 1. Select **Create**.
 
@@ -78,27 +92,29 @@ Copilot Studio is where you define what the agent does and says. This is low-cod
 
     ![Copilot Studio authoring canvas for the newly created agent](./media/a365-ex4-t1-03.png)
 
+    >**Note:** The Entra Agent ID for this agent was created **at this moment**, not when you publish later. Identity provisioning happens at agent creation time. Publishing makes the agent available to users, but the identity already exists and is already visible in Microsoft Entra, the Agent 365 registry, and the Microsoft 365 admin center. You will verify this in Task 3.
+
 ### Task 2: Add a Work IQ MCP tool and test the agent
 
-Right now Finley can talk about expenses but cannot act. In this task you give it a real capability by connecting a Work IQ MCP tool, then prove it works.
+Right now your agent can talk about expenses but cannot act. In this task you give it a real capability by connecting a Work IQ MCP tool, then prove it works.
 
-1. In your agent, select the **Tools** tab, then select **Add tool**.
+1. In your agent, select the **Tools** tab, then select **Add Tool**.
 
-    ![Agent Tools tab with the Add tool button](./media/a365-ex4-t2-01.png)
+    ![Agent Tools tab with the Add Tool button](./media/a365-ex4-t2-01.png)
 
-1. On the **Add tool** page, select **Model Context Protocol** to filter the catalog to MCP servers.
+1. On the **Add tool** page, select **Model Context Protocol** to see the Work IQ MCP servers and other MCP servers.
 
     ![Add tool page with Model Context Protocol selected](./media/a365-ex4-t2-02.png)
 
-    >**Note:** This catalog contains the Work IQ MCP servers plus other MCP servers available in your tenant. Highlights include Work IQ Mail, Calendar, Teams, SharePoint, OneDrive, Word, User, and Windows 365 agents. Each server exposes granular, auditable tools rather than broad access.
+    >**Note:** This catalog contains the Work IQ MCP servers plus other MCP servers available in your tenant. The Work IQ servers include **Work IQ Mail**, **Work IQ Calendar**, and **Work IQ Teams**. Each server exposes granular, auditable tools rather than broad access. If you do not see the Work IQ servers, try filtering by **Provider** and selecting **Microsoft**.
 
-1. In the search box, type **mail**.
+1. Type **mail** in the search box.
 
 1. Select **Work IQ Mail** from the results.
 
     ![Search results showing the Work IQ Mail MCP server](./media/a365-ex4-t2-03.png)
 
-1. Expand the **connection** dropdown and select **Create new connection**.
+1. Expand the **connection** dropdown and select **Create New Connection**.
 
 1. Select **Create**.
 
@@ -109,7 +125,11 @@ Right now Finley can talk about expenses but cannot act. In this task you give i
 
     ![Sign-in dialog for the Work IQ Mail MCP server connection](./media/a365-ex4-t2-04.png)
 
-    >**Note:** Each MCP server corresponds to a permission on the Agent 365 application. The agent only gains access to the server after this consent is granted, which is what makes every tool call authorized rather than implicit.
+1. Select **Add and Configure** to complete adding the tool.
+
+    >**Important:** Do not skip this step. Creating the connection alone does not attach the tool to your agent. **Add and Configure** is what completes the process.
+
+    >**Note:** Each Work IQ tool and MCP server is represented by a **permission on the Agent 365 application**. The agent gains access to the server only after this consent is granted, which is what makes every tool call authorized rather than implicit.
 
 1. Confirm **Work IQ Mail** now appears in your agent's tools list.
 
@@ -117,7 +137,7 @@ Right now Finley can talk about expenses but cannot act. In this task you give i
 
 1. Now test the tool. Select **Test** to open the test pane.
 
-1. Enter the following prompt, replacing the placeholder with your own lab email address:
+1. Enter the following prompt:
 
     ```
     Send an email to <inject key="AzureAdUserEmail"></inject> with the subject "Finley test" and ask how the hands-on lab is going.
@@ -133,11 +153,13 @@ Right now Finley can talk about expenses but cannot act. In this task you give i
 
     ![Outlook inbox showing the test email sent by the agent](./media/a365-ex4-t2-07.png)
 
-    >**Note:** This is the moment Finley stops being a chatbot and becomes an agent. It did not describe sending an email; it called a governed tool that actually sent one. Every such call is traced, which you will verify in Task 6.
+    >**Note:** This is the moment your agent stops being a chatbot and becomes an agent. It did not describe sending an email; it called a governed tool that actually sent one. Every such call is traced, which you will verify in Task 6.
+
+    >**Note:** Most Power Platform connectors use **on-behalf-of (OBO)** authentication, meaning the agent acts with **your** permissions rather than its own. In audit logs the action appears as performed by the user, with agent context attached. This is why the email arrives from your mailbox rather than an agent mailbox.
 
 1. Select **Publish** in the top menu bar to publish your agent for the first time.
 
-    >**Note:** You must publish the agent at least once before it can be connected to Teams. Publishing makes the current version available to channels.
+    >**Note:** You must publish the agent at least once before it can be connected to Teams. Publishing also matters for the next task: **connector permissions are attached to the agent's Entra Agent ID when a maker publishes the agent**, not when the tool is added. If you skip publishing, Task 3 will show an identity with no connector permissions on it.
 
 ### Task 3: Verify the agent's Entra Agent ID and connector permissions
 
@@ -151,7 +173,7 @@ This is the task that ties this exercise back to the first two. Copilot Studio c
 
     ![Copilot Studio agent settings showing the Entra Agent ID under Advanced Metadata](./media/a365-ex4-t3-01.png)
 
-    >**Note:** Starting July 2026, all new agents must have Microsoft Entra Agent IDs and you can no longer opt out of automatic creation. Agents created before that rollout continue to use app registrations and will be migrated over time. Governance capabilities work for both during the transition.
+    >**Note:** Starting **July 2026**, all new agents must have Microsoft Entra Agent IDs and you can no longer opt out of automatic agent identity creation. Agents created before that rollout continue to use app registrations and will be migrated over time. Governance capabilities work for both during the transition.
 
 1. Switch to the Microsoft Entra admin center tab, or navigate to:
 
@@ -165,21 +187,27 @@ This is the task that ties this exercise back to the first two. Copilot Studio c
 
     ![Agent identities page with the Copilot Studio agent identity located](./media/a365-ex4-t3-02.png)
 
+    >**Note:** You should now see **two** agent identities in this list: **finley-<inject key="DeploymentID" enableCopy="false"/> Identity** from Exercise 1, and the identity for the Copilot Studio agent you just built. Two very different build paths, one governance surface.
+
 1. Review the agent identity's **API permissions**. Note that the Power Platform connector permissions the agent uses appear here as first-class API permissions.
 
     ![Agent identity API permissions showing connector scopes](./media/a365-ex4-t3-03.png)
 
     >**Note:** This visibility is deliberate. Before it, an Entra or Microsoft 365 admin had to open the Power Platform admin center to discover which connectors an agent could call. Now those scopes are visible in Entra and, crucially, can be targeted by Conditional Access policies for network location, device compliance, or risk conditions.
 
-1. Also note the **blueprint** this identity belongs to. All Copilot Studio agent identities are children of a single tenant-wide blueprint named **Microsoft Copilot Studio agent identity blueprint**.
+1. Note the **blueprint** this identity belongs to.
 
-    >**Note:** Because every Copilot Studio agent shares one blueprint, applying a Conditional Access policy at the blueprint level covers every Copilot Studio agent in the tenant at once, including agents that do not exist yet. This is the same scaling principle as the attribute-driven policy you built in Exercise 2.
+    >**Note:** Unlike pro-code agents, where each agent gets its own blueprint, **all Copilot Studio app-based agents in your tenant share a single blueprint**. Compare this with Exercise 1, where the CLI created a dedicated **finley-<inject key="DeploymentID" enableCopy="false"/> Blueprint** for one agent. Record whatever blueprint name your tenant displays for the Copilot Studio agent; the exact display name varies by service build.
+
+    >**Note:** Because every Copilot Studio agent shares one blueprint, applying a Conditional Access policy at the blueprint level covers every Copilot Studio agent in the tenant at once, including agents that do not exist yet. This is the same scaling principle as the attribute-driven policy you built in Exercise 2. Permissions for these agents are managed at the Power Platform admin center level, and DLP and advanced connector policies apply automatically.
 
 1. Optionally, assign the **AgentApprovalStatus** custom security attribute to this identity with the value **Finance_Approved**, following the same steps as Exercise 2, Task 3. This brings the agent into scope of your attribute-driven policy.
 
+    >**Note:** This is worth doing if you have time. The policy you built in Exercise 2 blocks all agent identities **except** those tagged `Finance_Approved`. Without the tag, this new agent is exactly the kind of untagged agent that policy is designed to catch, which you can confirm in the policy's report-only impact data.
+
 ### Task 4: Publish the agent to Teams and Microsoft 365 Copilot
 
-Now you give Finley a place to work. Publishing happens in two stages: first you install it for yourself as a trial, then you submit it for admin approval so the whole organization can find it.
+Now you give the agent a place to work. Publishing happens in two stages: first you install it for yourself as a trial, then you submit it for admin approval so the whole organization can find it.
 
 1. Return to the Microsoft Copilot Studio tab and open your agent.
 
@@ -224,7 +252,7 @@ Now you give Finley a place to work. Publishing happens in two stages: first you
 
 1. Select **Show to everyone in my org**.
 
-1. Review the submission requirements, then select **Submit for admin approval**.
+1. Review the submission requirements, then select **Submit to org catalog**.
 
     ![Availability options panel with Show to everyone in my org and Submit for admin approval](./media/a365-ex4-t4-06.png)
 
@@ -244,11 +272,13 @@ You now change hats. You submitted the agent as a maker; you approve it as the a
 
 1. In the left navigation pane, expand **Agents (1)** and select **Overview (2)**.
 
-1. On the **Agent overview** dashboard, locate the **Pending requests for agents** card and select **Manage requests**.
+1. On the **Agent overview** dashboard, locate the **Pending requests** card and select the option to manage requests.
 
     ![Agent overview dashboard with the Pending requests for agents card](./media/a365-ex4-t5-01.png)
 
-1. You are taken to **All agents** > **Requests**. Locate your agent **Finley Expense Assistant <inject key="DeploymentID" enableCopy="false"/>** in the list.
+    >**Note:** Card names on this dashboard change frequently as the preview evolves. If you cannot find the card, navigate directly to **Agents** > **All agents** and select the **Requests** tab.
+
+1. On **All agents** > **Requests**, locate your agent **Finley Expense Assistant <inject key="DeploymentID" enableCopy="false"/>** in the list.
 
     ![Requests tab showing the pending agent submission](./media/a365-ex4-t5-02.png)
 
@@ -265,6 +295,8 @@ You now change hats. You submitted the agent as a maker; you approve it as the a
 1. Now deploy the agent to users. Navigate to **Agents** > **All agents** and ensure the **Registry** tab is selected.
 
 1. Select the **Status** filter and choose **Available**, then locate and select your agent.
+
+    >**Note:** Applying the **Status: Available** filter is required before the **Install** action appears. This is the documented sequence.
 
 1. In the agent details pane, immediately under the agent's name, select **Install**.
 
@@ -288,7 +320,7 @@ You now change hats. You submitted the agent as a maker; you approve it as the a
 
 ### Task 6: Trace agent activity in Microsoft Defender advanced hunting
 
-Governance without observability is a promise you cannot verify. In this task you query the actual record of what Finley is and what it can do.
+Governance without observability is a promise you cannot verify. In this task you query the actual record of what your agent is and what it can do.
 
 1. Open a new browser tab and navigate to the Microsoft Defender portal:
 
@@ -309,49 +341,70 @@ Governance without observability is a promise you cannot verify. In this task yo
 
     ```
     AgentsInfo
+    | summarize arg_max(Timestamp, *) by AgentId
     | project Timestamp, AgentName, Platform, EntraAgentId, PublishedStatus, LifecycleStatus, Owners
     | order by Timestamp desc
     ```
 
     ![Advanced hunting results showing agents from the AgentsInfo table](./media/a365-ex4-t6-02.png)
 
-    >**Note:** Use the **`AgentsInfo`** table. The older `AIAgentsInfo` table was **retired on 1 July 2026**, and any query written against it now fails. If you find older documentation or scripts referencing `AIAgentsInfo`, they need migrating.
+    >**Important:** Note the `summarize arg_max(Timestamp, *) by AgentId` line. The `AgentsInfo` table stores **multiple snapshots of each agent over time**, so a query without this line returns many rows for the same agent and looks confusing. `arg_max` returns only the latest state of each agent. Use this pattern in every query against this table.
+
+    >**Note:** Use the **`AgentsInfo`** table. The older `AIAgentsInfo` table remained accessible only until **1 July 2026** and queries written against it now fail. If you find older documentation or scripts referencing `AIAgentsInfo`, they need migrating.
 
 1. Narrow the query to your own agent:
 
     ```
     AgentsInfo
     | where AgentName contains "Finley"
+    | summarize arg_max(Timestamp, *) by AgentId
     | project Timestamp, AgentName, Platform, EntraAgentId, EntraBlueprintId, LifecycleStatus, Availability, Owners
-    | order by Timestamp desc
     ```
 
-    >**Note:** If the query returns no rows, advanced hunting has **ingestion latency**; the data has not arrived yet. Wait a few minutes and run the query again. An empty first result is normal and is not a sign that anything is broken.
+    >**Note:** `PublishedStatus` returns either `Draft` or `Published`. `LifecycleStatus` returns `Active`, `Blocked`, `Uninstalled`, or `Deleted`. Knowing the exact permitted values makes it much easier to confirm that a governance action actually took effect, which you will use in Task 7.
+
+    >**Note:** If the query returns no rows, advanced hunting has **ingestion latency** and the data has not arrived yet. Wait a few minutes and run the query again. An empty first result is normal and is not a sign that anything is broken.
 
 1. Now inspect what tools and MCP servers the agent has been given. Run the following query:
 
     ```
     AgentsInfo
     | where AgentName contains "Finley"
-    | project Timestamp, AgentName, McpServers, DeclaredTools, DeclaredDataSources, Permissions
+    | summarize arg_max(Timestamp, *) by AgentId
+    | project AgentName, McpServers, DeclaredTools, DeclaredDataSources, Permissions
     ```
 
     ![Advanced hunting results showing MCP servers and declared tools for the agent](./media/a365-ex4-t6-03.png)
 
-    >**Note:** The `McpServers` column shows the MCP servers connected to the agent, including server URLs and credential configuration. This is how a security analyst answers "what can this agent actually reach?" without opening Copilot Studio.
+    >**Note:** The `McpServers` column shows the MCP servers connected to the agent, including server URLs and credential configuration. This is how a security analyst answers "what can this agent actually reach?" without opening Copilot Studio. `Permissions` shows requested and granted permissions with their approval state.
 
 1. Review the agent's system prompt and model, which reveal what the agent was instructed to do:
 
     ```
     AgentsInfo
     | where AgentName contains "Finley"
+    | summarize arg_max(Timestamp, *) by AgentId
     | project AgentName, Model, Instructions, Channels, Capabilities, Guardrails
     ```
+
+    >**Note:** The `Instructions` column contains the exact system prompt you typed in Task 1. Being able to read an agent's instructions from a security portal, without access to the authoring tool, is how an analyst determines intent during an investigation.
+
+1. Optionally, inspect the agent's runtime surface and multi-agent connections:
+
+    ```
+    AgentsInfo
+    | where AgentName contains "Finley"
+    | summarize arg_max(Timestamp, *) by AgentId
+    | project AgentName, Endpoints, ConnectedAgents, Triggers, Memory, InstanceCount, ObservabilityId
+    ```
+
+    >**Note:** `Endpoints` lists agent runtime endpoints including URL, transport type, and an external connectivity flag. `ConnectedAgents` lists other agents wired in for multi-agent orchestration, which is how you discover an agent chain nobody documented.
 
 1. Finally, run a tenant-wide posture query that would be useful in a real environment, summarising agents by platform and lifecycle state:
 
     ```
     AgentsInfo
+    | summarize arg_max(Timestamp, *) by AgentId
     | summarize AgentCount = count() by Platform, LifecycleStatus
     | order by AgentCount desc
     ```
@@ -370,13 +423,15 @@ Finally, prove you can control the agent after deployment. An agent you cannot s
 
 1. Locate and select your agent **Finley Expense Assistant <inject key="DeploymentID" enableCopy="false"/>**.
 
+    >**Note:** To find it quickly, use the **Platform** filter and select **Copilot Studio**.
+
 1. **Suspend the agent.** In the agent details pane, immediately under the agent's name, select **Block**.
 
 1. In the **Block agent** pane, select **Block agent**, then select **Save**.
 
     ![Block agent pane with the Block agent option selected](./media/a365-ex4-t7-01.png)
 
-    >**Note:** Blocking restricts access to the agent across the organization so no user can use it. It is reversible and is the correct first action when an agent is behaving unexpectedly, because it stops the behaviour without destroying evidence.
+    >**Note:** Blocking restricts access to the agent across the organization so no user can use it. It is reversible and is the correct first action when an agent is behaving unexpectedly, because it stops the behaviour without destroying evidence. For agents built in Copilot Studio or Agent Builder, blocking affects availability in Microsoft 365 Copilot **and** host products such as Outlook and Teams. For agents built in SharePoint or Microsoft Foundry, blocking only affects Microsoft 365 Copilot Chat.
 
 1. Verify the agent's status now shows as blocked in the registry.
 
@@ -388,34 +443,40 @@ Finally, prove you can control the agent after deployment. An agent you cannot s
 
     ![Assign a new owner pane](./media/a365-ex4-t7-02.png)
 
-    >**Note:** After reassignment, the new owner gets full edit and delete permissions plus access to any files the previous owner uploaded, and the previous owner loses all access including read rights. This action is supported for Agent Builder and Copilot Studio agents.
+    >**Note:** After reassignment, the new owner gets full edit and delete permissions plus access to any files the previous owner uploaded, and the previous owner loses all access including read rights. This action is supported **only** for Agent Builder and Copilot Studio agents, which is why it works for this agent but would not work for Finley from Exercise 1.
 
 1. **Uninstall the agent.** Select the agent, then select **Uninstall**.
+
+    >**Note:** If you do not see the **Uninstall** option, the agent is not currently installed. Confirm you completed the **Install** step in Task 5, and that the **Status: Available** filter is applied.
 
 1. In the **Remove agent** pane, select the **Remove agent** option, then select the **Uninstall Agent** button.
 
     ![Remove agent pane with the Uninstall Agent button](./media/a365-ex4-t7-03.png)
 
-    >**Note:** Uninstalling affects the agent's availability and functionality in Copilot and in host products such as Outlook and Teams. It is distinct from **Delete**, which permanently removes the agent and all associated files, including the underlying SharePoint Embedded container. Deletion is irreversible and can take up to 24 hours to reach all users.
+    >**Note:** Uninstalling affects the agent's availability and functionality in Copilot and in host products such as Outlook and Teams. It is distinct from **Delete**, which permanently removes the agent, all associated files, and the underlying SharePoint Embedded container. Deletion is irreversible and can take up to 24 hours to reach all users, during which users may still see the agent listed but cannot interact with it.
+
+    >**Note:** In the Microsoft 365 admin center, **Delete** is documented for agents created with **Microsoft 365 Copilot Agent Builder**, reached through the vertical ellipses (**⁝**) next to the agent. It is not the path for retiring a Copilot Studio agent. To delete a Copilot Studio agent, delete it in **Copilot Studio** - which also deletes its associated Microsoft Entra Agent ID automatically.
 
 1. Return to **Agents** > **Overview** and confirm the governance cards reflect your changes.
 
-1. Optionally, re-run the advanced hunting query from Task 6 to observe the `LifecycleStatus` column change to reflect the actions you performed:
+1. Re-run the advanced hunting query from Task 6 to observe the `LifecycleStatus` column change:
 
     ```
     AgentsInfo
     | where AgentName contains "Finley"
+    | summarize arg_max(Timestamp, *) by AgentId
     | project Timestamp, AgentName, LifecycleStatus, Availability
-    | order by Timestamp desc
     ```
 
-    >**Note:** Remember ingestion latency. The lifecycle change may take a few minutes to appear in advanced hunting.
+    >**Note:** Expect `LifecycleStatus` to read **`Uninstalled`** after the uninstall action. Had you stopped after blocking, it would read **`Blocked`**. Remember ingestion latency - the change may take a few minutes to appear.
+
+    >**Troubleshooting:** If a lifecycle action appears to succeed in the UI but never takes effect on the agent, the agent may live in a Power Platform environment configured with **Power Platform Firewall** in **active enforcement mode**, which rejects admin actions originating from the Microsoft 365 admin center. Check this in the Power Platform admin center under **Security** > **Identity and access** > **IP firewall**, on the **Advanced** tab. If **IP Firewall** is **On** and **Turn on IP firewall in audit-only mode** is **Off**, the environment is in active enforcement mode. In that state the action must be run directly against the Power Platform API instead.
 
 ## Conclusion
 
-In this exercise you completed the agent lifecycle. You built Finley in Copilot Studio, grounded it in Microsoft IQ through a Work IQ MCP tool and proved the grounding worked by having it send a real email, confirmed that Copilot Studio had automatically issued it an Entra Agent ID subject to the policies you wrote in Exercise 2, published it to Teams through an approval flow that required an administrator to review its permissions, audited it in Defender advanced hunting, and finally suspended, reassigned, and removed it.
+In this exercise you completed the agent lifecycle. You built a low-code agent in Copilot Studio, grounded it in Microsoft IQ through a Work IQ MCP tool and proved the grounding worked by having it send a real email, confirmed that Copilot Studio had automatically issued it an Entra Agent ID subject to the policies you wrote in Exercise 2, published it to Teams through an approval flow that required an administrator to review its permissions, audited it in Defender advanced hunting, and finally suspended, reassigned, and removed it.
 
-The thread running through all four exercises is that governance is not a gate you add at the end. Finley was governable in Exercise 4 because it had an identity in Exercise 1 and policies in Exercise 2. Had you built the agent first and tried to govern it afterwards, you would have been retrofitting controls onto something already in production, which is exactly the situation Contoso was in when this lab started.
+The thread running through all four exercises is that governance is not a gate you add at the end. The agent was governable in Exercise 4 because the identity model existed in Exercise 1 and the policies existed in Exercise 2. Note also that the two agents in this lab were built in completely different ways - one through a developer CLI, one through a low-code studio - and both landed in the same registry, under the same Conditional Access policies, in the same Defender table. That convergence is the whole point of a control plane.
 
 ## Review
 
@@ -433,7 +494,7 @@ In this exercise, you have completed the following:
 
 In this exercise, you built an agent in Copilot Studio, grounded it in Microsoft 365 context using a Work IQ MCP tool, verified its automatically created Entra Agent ID and connector permissions, published it to Teams through an IT-approved flow, traced its properties and tooling in Microsoft Defender advanced hunting using the `AgentsInfo` table, and exercised block, reassign, and uninstall lifecycle actions from the Agent 365 registry.
 
-You have now governed a single agent across identity, policy, compute, intelligence, and lifecycle, which is the complete Agent 365 control plane.
+You have now governed agents across identity, policy, compute, intelligence, and lifecycle, which is the complete Agent 365 control plane.
 
 ### You have successfully completed the lab. Click on **Next** to proceed.
 
