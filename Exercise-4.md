@@ -23,9 +23,6 @@ The critical governance point in this exercise is that Copilot Studio **automati
 | **Microsoft Defender for AI** | Advanced hunting in Task 6 | Yes - `DEFENDER_FOR_AI` provisioned |
 | **AI Administrator** or **Global Administrator** | Approving agent requests and lifecycle actions in Tasks 5 and 7 | Yes - Global Administrator |
 
->**Note:** **Work IQ MCP is a preview feature.** Copilot Studio currently offers only the preview version; general availability is coming. When Work IQ reaches GA in Copilot Studio, the Work IQ API transitions to a **usage-based (consumptive) billing model**, so cost management becomes relevant in production.
-
->**Note:** If Work IQ MCP tools are unavailable in your lab tenant's region, substitute any standard Copilot Studio connector tool. The publishing, approval, observability, and lifecycle tasks in Tasks 4 to 7 are unaffected. Administrators can also allow or block individual MCP servers in the Microsoft 365 admin center under **Agents and Tools**; if a server has been blocked tenant-wide it will not appear in the catalog. Microsoft notes that this allow/block capability **might not be available in every region yet**.
 
 ## In this exercise you will
 
@@ -49,7 +46,6 @@ The critical governance point in this exercise is that Copilot Studio **automati
 
 ### Task 1: Create an agent in Microsoft Copilot Studio
 
-```admin.powerplatform.com login```
 Copilot Studio is where you define what the agent does and says. This is low-code configuration, not programming.
 
 1. On the lab virtual machine, open a new browser tab and navigate to Microsoft Copilot Studio:
@@ -174,49 +170,55 @@ Now you give the agent a place to work. Publishing happens in two stages: first 
 
 1. Select the **Teams + Microsoft 365** tile to open its configuration panel.
 
-    ![](./media/a365-ex4-t4-01.png)
+1. Under **Turn on Microsoft 365**, ensure **Make agent available in Microsoft 365 Copilot (1)** is selected.
 
-1. Under **Turn on Microsoft 365**, ensure **Make agent available in Microsoft 365 Copilot** is selected.
+1. Select **Save and publish (2)**.
 
-1. Select **Add channel**.
-
-    ![Teams and Microsoft 365 Copilot configuration panel with Add channel selected](./media/a365-ex4-t4-02.png)
+    ![](./media/ex4-14.png)
 
 1. Select **Edit details** and provide the information users will see in the app store:
 
-   - Confirm the agent **short description** and **Long Description**
+   - Confirm the agent **short description** and **Long Description (1)**
    
-   - Select **More** and add a **Developer name** and **Website**
+   - Select **More** and add a **Developer name (2)**.
 
-1. Select **Save**.
+1. Select **Save and publish (3)**.
 
-    ![Edit details panel showing agent appearance and developer information](./media/a365-ex4-t4-03.png)
+    ![](./media/ex4-15.png)
 
-1. Now install the agent for yourself. In the configuration panel, select **See agent in Teams**.
+    ![](./media/ex4-16.png)
+
+1. After publishing click back, now install the agent for yourself. In the configuration panel, select **See agent in Teams**.
+
+    ![](./media/ex4-17.png)
+
+    >Note: If prompted to open Teams App, select **open the web App instead**.
 
 1. In the Teams dialog that opens, select **Add**.
 
-    ![Teams Add agent dialog for the Finley agent](./media/a365-ex4-t4-04.png)
+    ![](./media/ex4-18.png)
 
-1. Confirm the agent appears in your Teams agent list, and send it a test message to verify it responds.
+1. Added successfully message appears, now,click open to send it a test message to verify it responds.
 
-    ![Teams chat showing a conversation with the Finley agent](./media/a365-ex4-t4-05.png)
+    ![](./media/ex4-20.png)
+
+    ![](./media/ex4-19.png)
 
 1. Now make it available to the organization. Return to the **Teams and Microsoft 365 Copilot** configuration panel in Copilot Studio and select **Availability options**.
+  
+    ![](./media/ex4-21.png) 
 
-1. Confirm the agent is **not** currently shown to teammates or shared users. If it shows **Added to Teams**, remove it first.
-
-    >**Note:** If you submit an agent for admin approval while it is also shown in the **Built with Power Platform** section, it can end up appearing in two places in the app store.
-
-1. Select **Show to everyone in my org**.
+1. Select **Submit to org catalog**.
+    
+    ![](./media/ex4-22.png)
 
 1. Review the submission requirements, then select **Submit to org catalog**.
 
-    ![Availability options panel with Show to everyone in my org and Submit for admin approval](./media/a365-ex4-t4-06.png)
+    ![](./media/ex4-23.png)
 
-1. At the confirmation prompt, select **Yes**.
+1. At the confirmation prompt, select **Yes,submit**.
 
-    >**Note:** After submitting, do not change the agent's access setting to less than everyone in your organization. Doing so causes users who install it from the app store to be unable to chat with it.
+    ![](./media/ex4-24.png)
 
 ### Task 5: Approve the agent in the Microsoft 365 admin center
 
@@ -230,51 +232,37 @@ You now change hats. You submitted the agent as a maker; you approve it as the a
 
 1. In the left navigation pane, expand **Agents (1)** and select **Overview (2)**.
 
-1. On the **Agent overview** dashboard, locate the **Pending requests** card and select the option to manage requests.
+1. On the **Agent overview** dashboard, locate the **Pending requests** card and select the **manage requests (3)**.
 
-    ![Agent overview dashboard with the Pending requests for agents card](./media/a365-ex4-t5-01.png)
+    ![](./media/ex4-25.png)
 
-    >**Note:** Card names on this dashboard change frequently as the preview evolves. If you cannot find the card, navigate directly to **Agents** > **All agents** and select the **Requests** tab.
+1. On **All agents** > **Requests**, locate your agent **Finley Expense Assistant** in the list.
 
-1. On **All agents** > **Requests**, locate your agent **Finley Expense Assistant <inject key="DeploymentID" enableCopy="false"/>** in the list.
+    ![](./media/ex4-26.png)
 
-    ![Requests tab showing the pending agent submission](./media/a365-ex4-t5-02.png)
-
-1. Select the agent to review its details, including the publisher, the platform it was built on, and the permissions it is requesting.
-
-    >**Note:** This review step is the governance control. Read the requested permissions and ask whether each one is necessary for the agent's stated purpose. An expense assistant that requests broad mail write access deserves a question.
+1. Select the agent to review its details.
 
 1. Select **Publish to store** to make the agent available to members of your organization.
 
-    ![Agent request details pane with the Publish to store action](./media/a365-ex4-t5-03.png)
+    ![](./media/ex4-27.png)
 
-    >**Note:** The alternative action is **Reject submission**, which prevents the agent from becoming available. Both actions require the **AI Administrator** or **Global Administrator** role.
+1. In Publish agent to selected users screen, select users or groups who can install the agent. For this lab, select **specific users/groups** and choose your own account.
 
-1. Now deploy the agent to users. Navigate to **Agents** > **All agents** and ensure the **Registry** tab is selected.
+    ![](./media/ex4-28.png)
 
-1. Select the **Status** filter and choose **Available**, then locate and select your agent.
+1. For select users or groups who will have the agent pre-installed. For this lab, select **specific users/groups**, choose your own account, and click **Next**.
 
-    >**Note:** Applying the **Status: Available** filter is required before the **Install** action appears. This is the documented sequence.
+1. Click **Next** on both the Apply template pane and Accept permissions keeping the settings as default.
 
-1. In the agent details pane, immediately under the agent's name, select **Install**.
+1. On Review and finish pane, review the details and select **Publish**.
 
-    ![Agent details pane with the Install action highlighted](./media/a365-ex4-t5-04.png)
+    ![](./media/ex4-30.png)
 
-1. In the **Deploy agent to selected users** pane, choose whether to install for all users or specific users and groups. For this lab, select **specific users** and choose your own account. Select **Next**.
+1. Once published, click Done.
 
-    ![Deploy agent to selected users pane](./media/a365-ex4-t5-05.png)
+1. Verify the agent now appears with an Available status in the registry.
 
-1. In the **Review permissions** pane, review the requested permissions. If acceptable, select **Grant admin consent**.
-
-1. In the **Permissions requested** window, select **Accept**, then select **Next**.
-
-    ![Review permissions pane showing the agent permissions and Grant admin consent](./media/a365-ex4-t5-06.png)
-
-1. In the **Review & finish** pane, select **Finish deployment**.
-
-1. Verify the agent now appears with an installed status in the registry.
-
-    >**Note:** If the agent does not appear in the **Built for your org** section of the Teams app store after approval, Teams is caching app information. Sign out of the Teams desktop client and sign back in, or refresh the browser if you are using Teams on the web. This is documented, expected behaviour, not a failure.
+    ![](./media/ex4-31.png)
 
 ### Task 6: Trace agent activity in Microsoft Defender advanced hunting
 
@@ -289,75 +277,63 @@ Governance without observability is a promise you cannot verify. In this task yo
 1. If prompted, sign in with the following credentials:
 
    - **Email/Username:** <inject key="AzureAdUserEmail"></inject>
-   - **Password:** <inject key="AzureAdUserPassword"></inject>
 
-1. In the left navigation pane, expand **Hunting** and select **Advanced hunting**.
+   - **Temporary Access Pass:** <inject key="AzureAdUserPassword"></inject>
 
-    ![Microsoft Defender portal with Advanced hunting selected under Hunting](./media/a365-ex4-t6-01.png)
+1. In the left navigation pane, expand **Investigation & response (1)**, then expand **Hunting (2)** and select **Advanced hunting (3)**.
+
+    ![](./media/ex4-32.png)
 
 1. In the query editor, enter the following KQL query to list the agents in your tenant, then select **Run query**:
 
     ```
     AgentsInfo
     | summarize arg_max(Timestamp, *) by AgentId
-    | project Timestamp, AgentName, Platform, EntraAgentId, PublishedStatus, LifecycleStatus, Owners
+    | project Timestamp, Name, Platform, PublishedStatus, LifecycleStatus, Owners
     | order by Timestamp desc
     ```
 
-    ![Advanced hunting results showing agents from the AgentsInfo table](./media/a365-ex4-t6-02.png)
-
-    >**Important:** Note the `summarize arg_max(Timestamp, *) by AgentId` line. The `AgentsInfo` table stores **multiple snapshots of each agent over time**, so a query without this line returns many rows for the same agent and looks confusing. `arg_max` returns only the latest state of each agent. Use this pattern in every query against this table.
-
-    >**Note:** Use the **`AgentsInfo`** table. The older `AIAgentsInfo` table remained accessible only until **1 July 2026** and queries written against it now fail. If you find older documentation or scripts referencing `AIAgentsInfo`, they need migrating.
+    ![](./media/ex4-33.png)
 
 1. Narrow the query to your own agent:
 
     ```
     AgentsInfo
-    | where AgentName contains "Finley"
+    | where Name contains "Finley"
     | summarize arg_max(Timestamp, *) by AgentId
-    | project Timestamp, AgentName, Platform, EntraAgentId, EntraBlueprintId, LifecycleStatus, Availability, Owners
+    | project Timestamp, Name, Platform, LifecycleStatus, Availability, Owners
     ```
-
-    >**Note:** `PublishedStatus` returns either `Draft` or `Published`. `LifecycleStatus` returns `Active`, `Blocked`, `Uninstalled`, or `Deleted`. Knowing the exact permitted values makes it much easier to confirm that a governance action actually took effect, which you will use in Task 7.
-
-    >**Note:** If the query returns no rows, advanced hunting has **ingestion latency** and the data has not arrived yet. Wait a few minutes and run the query again. An empty first result is normal and is not a sign that anything is broken.
+    
+    ![](./media/ex4-34.png)
 
 1. Now inspect what tools and MCP servers the agent has been given. Run the following query:
 
     ```
     AgentsInfo
-    | where AgentName contains "Finley"
+    | where Name contains "Finley"
     | summarize arg_max(Timestamp, *) by AgentId
-    | project AgentName, McpServers, DeclaredTools, DeclaredDataSources, Permissions
+    | project Name, McpServers, DeclaredTools, DeclaredDataSources, Permissions
     ```
 
-    ![Advanced hunting results showing MCP servers and declared tools for the agent](./media/a365-ex4-t6-03.png)
-
-    >**Note:** The `McpServers` column shows the MCP servers connected to the agent, including server URLs and credential configuration. This is how a security analyst answers "what can this agent actually reach?" without opening Copilot Studio. `Permissions` shows requested and granted permissions with their approval state.
+    ![](./media/ex4-35.png)
 
 1. Review the agent's system prompt and model, which reveal what the agent was instructed to do:
 
     ```
     AgentsInfo
-    | where AgentName contains "Finley"
+    | where Name contains "Finley"
     | summarize arg_max(Timestamp, *) by AgentId
-    | project AgentName, Model, Instructions, Channels, Capabilities, Guardrails
+    | project Name, Model, Instructions, Channels, Capabilities, Guardrails
     ```
-
-    >**Note:** The `Instructions` column contains the exact system prompt you typed in Task 1. Being able to read an agent's instructions from a security portal, without access to the authoring tool, is how an analyst determines intent during an investigation.
 
 1. Optionally, inspect the agent's runtime surface and multi-agent connections:
 
     ```
     AgentsInfo
-    | where AgentName contains "Finley"
+    | where Name contains "Finley"
     | summarize arg_max(Timestamp, *) by AgentId
-    | project AgentName, Endpoints, ConnectedAgents, Triggers, Memory, InstanceCount, ObservabilityId
+    | project Name, Endpoints, ConnectedAgents, Triggers, Memory, InstanceCount
     ```
-
-    >**Note:** `Endpoints` lists agent runtime endpoints including URL, transport type, and an external connectivity flag. `ConnectedAgents` lists other agents wired in for multi-agent orchestration, which is how you discover an agent chain nobody documented.
-
 1. Finally, run a tenant-wide posture query that would be useful in a real environment, summarising agents by platform and lifecycle state:
 
     ```
@@ -367,9 +343,7 @@ Governance without observability is a promise you cannot verify. In this task yo
     | order by AgentCount desc
     ```
 
-    ![Advanced hunting results summarising agent counts by platform and lifecycle status](./media/a365-ex4-t6-04.png)
-
-    >**Note:** This last query is the kind of thing you would pin to a dashboard. It answers "how many agents do we have, on what platforms, and how many are blocked or uninstalled?" which is exactly the question Contoso could not answer at the start of this lab.
+    ![](./media/ex4-36.png)
 
 ### Task 7: Exercise lifecycle governance actions
 
@@ -377,58 +351,44 @@ Finally, prove you can control the agent after deployment. An agent you cannot s
 
 1. Switch to the Microsoft 365 admin center tab.
 
-1. Navigate to **Agents** > **All agents** and ensure the **Registry** tab is selected.
+1. Navigate to **Agents (1)** > **All agents (2)** and ensure the **Registry** tab is selected.
 
-1. Locate and select your agent **Finley Expense Assistant <inject key="DeploymentID" enableCopy="false"/>**.
+1. Locate and select your agent **Finley Expense Assistant (3)**.
 
-    >**Note:** To find it quickly, use the **Platform** filter and select **Copilot Studio**.
+    ![](./media/ex4-37.png)
 
-1. **Suspend the agent.** In the agent details pane, immediately under the agent's name, select **Block**.
+1. **Suspend the agent.**  On the top right, select **Block (1)**, then on Block agent screen, select **Block agent (2)** checkbox, and click **Save (3)**.
 
-1. In the **Block agent** pane, select **Block agent**, then select **Save**.
+    ![](./media/ex4-38.png)
 
-    ![Block agent pane with the Block agent option selected](./media/a365-ex4-t7-01.png)
-
-    >**Note:** Blocking restricts access to the agent across the organization so no user can use it. It is reversible and is the correct first action when an agent is behaving unexpectedly, because it stops the behaviour without destroying evidence. For agents built in Copilot Studio or Agent Builder, blocking affects availability in Microsoft 365 Copilot **and** host products such as Outlook and Teams. For agents built in SharePoint or Microsoft Foundry, blocking only affects Microsoft 365 Copilot Chat.
+    ![](./media/ex4-39.png)
 
 1. Verify the agent's status now shows as blocked in the registry.
+   
+   ![](./media/ex4-40.png)
 
-1. **Restore the agent.** Select the agent again and select **Unblock**, then confirm.
+   >Note: If you see an error, go back and select the correct agent with the Uninstall option on the left side of the block icon as shown in the previous image.
+         
+1. **Restore the agent.** Select **Unblock (1)**, then on Unblock agent screen, select **Unblock agent (2)** checkbox, and click **Save (3)**.
 
-1. **Reassign ownership.** With the agent selected, in the details pane select **Assign new owner**.
+    ![](./media/ex4-41.png)
 
-1. In the **Assign a new owner** pane, enter a user from your organization and select **Assign**.
+    ![](./media/ex4-42.png)
 
-    ![Assign a new owner pane](./media/a365-ex4-t7-02.png)
+1. **Uninstall the agent.** Select **Uninstall (1)**, then on Remove agent screen, select **Remove agent (2)** checkbox, and click **Uninstall Agent (3)**.
 
-    >**Note:** After reassignment, the new owner gets full edit and delete permissions plus access to any files the previous owner uploaded, and the previous owner loses all access including read rights. This action is supported **only** for Agent Builder and Copilot Studio agents, which is why it works for this agent but would not work for Finley from Exercise 1.
+    ![](./media/ex4-43.png)
 
-1. **Uninstall the agent.** Select the agent, then select **Uninstall**.
-
-    >**Note:** If you do not see the **Uninstall** option, the agent is not currently installed. Confirm you completed the **Install** step in Task 5, and that the **Status: Available** filter is applied.
-
-1. In the **Remove agent** pane, select the **Remove agent** option, then select the **Uninstall Agent** button.
-
-    ![Remove agent pane with the Uninstall Agent button](./media/a365-ex4-t7-03.png)
-
-    >**Note:** Uninstalling affects the agent's availability and functionality in Copilot and in host products such as Outlook and Teams. It is distinct from **Delete**, which permanently removes the agent, all associated files, and the underlying SharePoint Embedded container. Deletion is irreversible and can take up to 24 hours to reach all users, during which users may still see the agent listed but cannot interact with it.
-
-    >**Note:** In the Microsoft 365 admin center, **Delete** is documented for agents created with **Microsoft 365 Copilot Agent Builder**, reached through the vertical ellipses (**⁝**) next to the agent. It is not the path for retiring a Copilot Studio agent. To delete a Copilot Studio agent, delete it in **Copilot Studio** - which also deletes its associated Microsoft Entra Agent ID automatically.
-
-1. Return to **Agents** > **Overview** and confirm the governance cards reflect your changes.
+    ![](./media/ex4-44.png)
 
 1. Re-run the advanced hunting query from Task 6 to observe the `LifecycleStatus` column change:
 
     ```
     AgentsInfo
-    | where AgentName contains "Finley"
+    | where Name contains "Finley"
     | summarize arg_max(Timestamp, *) by AgentId
-    | project Timestamp, AgentName, LifecycleStatus, Availability
+    | project Timestamp, Name, LifecycleStatus, Availability
     ```
-
-    >**Note:** Expect `LifecycleStatus` to read **`Uninstalled`** after the uninstall action. Had you stopped after blocking, it would read **`Blocked`**. Remember ingestion latency - the change may take a few minutes to appear.
-
-    >**Troubleshooting:** If a lifecycle action appears to succeed in the UI but never takes effect on the agent, the agent may live in a Power Platform environment configured with **Power Platform Firewall** in **active enforcement mode**, which rejects admin actions originating from the Microsoft 365 admin center. Check this in the Power Platform admin center under **Security** > **Identity and access** > **IP firewall**, on the **Advanced** tab. If **IP Firewall** is **On** and **Turn on IP firewall in audit-only mode** is **Off**, the environment is in active enforcement mode. In that state the action must be run directly against the Power Platform API instead.
 
 ## Conclusion
 
@@ -454,6 +414,4 @@ In this exercise, you built an agent in Copilot Studio, grounded it in Microsoft
 
 You have now governed agents across identity, policy, compute, intelligence, and lifecycle, which is the complete Agent 365 control plane.
 
-### You have successfully completed the lab. Click on **Next** to proceed.
-
-![Next button in the lower right corner of the lab guide](./media/a365-gs-07.png)
+### You have successfully completed the lab. 
