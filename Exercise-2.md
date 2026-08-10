@@ -48,7 +48,7 @@ Before writing your own rules, understand what is already enforced. Every tenant
 
 1. In the Microsoft 365 admin center, in the left navigation pane, expand **Agents (1)** and select **Settings (2)**.
 
-    ![Microsoft 365 admin center with Agents expanded and Settings selected](./media/a365-ex2-t1-01.png)
+    ![](./media/a365-ex2-t1-01.png)
 
 1. Review the configuration options available on the **Agent settings** page:
 
@@ -58,7 +58,7 @@ Before writing your own rules, understand what is already enforced. Every tenant
    - **Sharing** - manage who can share agents and how
    - **User access** - control which users or groups can interact with agents
 
-    ![Agent settings page showing the five configuration areas](./media/a365-ex2-t1-02.png)
+    ![](./media/a365-ex2-t1-02.png)
 
 1. Select **Policy templates** to view the policy templates available in your tenant.
 
@@ -66,7 +66,7 @@ Before writing your own rules, understand what is already enforced. Every tenant
 
 1. Select **Default policy templates for agents** to open it.
 
-    ![Policy templates page showing the available default policy template](./media/a365-ex2-t1-03.png)
+    ![](./media/a365-ex2-t1-03.png)
 
     >**Note:** Microsoft documentation describes two default templates, **Default policy template for all agents except AI teammates** and **Default policy template for AI teammates in Frontier**. This lab tenant exposes a single template named **Default policy templates for agents**. The policy-template experience is in preview and its naming changes between service builds, so work with whichever template name your tenant displays.
 

@@ -77,12 +77,6 @@ Copilot Studio is where you define what the agent does and says. This is low-cod
     ```
     ![](./media/ex4-3.png)
 
-1. Select **Create**.
-
-1. Wait for the agent to be created. When the authoring canvas opens, your agent is ready to configure.
-
-    ![Copilot Studio authoring canvas for the newly created agent](./media/a365-ex4-t1-03.png)
-
 ### Task 2: Add a Work IQ MCP tool and test the agent
 
 Right now your agent can talk about expenses but cannot act. In this task you give it a real capability by connecting a Work IQ MCP tool, then prove it works.
