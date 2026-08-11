@@ -367,4 +367,4 @@ In this exercise, you created an agent identity blueprint and agent identity in 
 
 Click **Next** from the lower right corner to move on to the next page.
 
-![Next button in the lower right corner of the lab guide](./media/a365-gs-07.png)
+![](./media/next.png)

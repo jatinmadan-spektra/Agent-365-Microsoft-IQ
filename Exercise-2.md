@@ -288,69 +288,35 @@ The previous policy answers "is this agent approved?". This one answers a differ
 
 1. Still in **Entra ID** > **Conditional Access** > **Policies**, select **+ New policy**.
 
-1. In the **Name** field, enter:
+1. In the **Name (1)** field, enter:
 
     ```
     CA-Agents-BlockHighRiskAgents
     ```
 
-1. Under **Assignments**, select **Users, agents or workload identities**.
+1. Under **Assignments**, select **Users or agents (2)**.
 
-1. Under **What does this policy apply to?**, select **Agents**, then under **Include** select **All agent identities**.
+1. Under **What does this policy apply to?**, select **Agents (3)**, then under **Include** select **All agent identities (4)**.
+
+    ![](./media/ex2-28.png)
 
 1. Under **Target resources** > **Include**, select **All resources (formerly 'All cloud apps')**.
 
-1. Under **Conditions**, select **Agent risk (Preview)** and set **Configure** to **Yes**.
+1. Under **Conditions**, select **Agent risk (Preview)** and set **Configure** to **Yes (1)**.
 
-    >**Note:** When a policy targets agent identities, **Agent risk (Preview)** is the **only** condition available. Conditions such as device platforms, filter for devices, agent execution environments, and network apply only to agent **user** accounts, because they depend on signals that only an endpoint can provide.
+1. Under **Configure agent risk levels needed for policy to be enforced**, select **High (2)** and click **Done (3)**.
 
-1. Under **Configure agent risk levels needed for policy to be enforced**, select **High**.
-
-    ![Agent risk condition configured for High risk level](./media/a365-ex2-t5-01.png)
-
-    >**Note:** Microsoft recommends starting with **High** only. Including **Medium** increases the chance of blocking legitimate agent activity. Tune this per your organization's risk tolerance.
+    ![](./media/ex2-29.png)
 
 1. Under **Access controls** > **Grant**, select **Block access**, then select **Select**.
-
-    >**Note:** For agents authenticating with their own identity there is no remediation path such as multifactor authentication, because no human is present to respond to a prompt. **Block** is the only meaningful control.
 
 1. Set **Enable policy** to **Report-only**, then select **Create**.
 
 1. Select your new policy and review its impact data.
 
-    ![](./media/a365-ex2-t5-02.png)
-
 1. Confirm both policies now appear in the **Policies** list with a state of **Report-only**.
 
-### Task 6: Review conformance and risk signals in the registry
-
-Finally, close the loop. The Microsoft 365 admin center aggregates signals from Entra, Defender, and Purview into a single view, so an administrator does not have to check three portals to find out whether an agent is a problem.
-
-1. Switch to the Microsoft 365 admin center tab.
-
-1. Navigate to **Agents (1)** > **All agents (2)** and ensure the **Registry (3)** tab is selected.
-
-1. Locate the **Risks** column in the agent list. This column aggregates high-severity risks across Microsoft Entra, Microsoft Defender, and Microsoft Purview.
-
-    ![](./media/a365-ex2-t6-01.png)
-
-    >**Note:** The Risks column exists to close a specific visibility gap. Before it, an administrator governing agents had to correlate findings across three separate security portals manually.
-
-    >**Note:** The Risks column shows **high severity** risks only. A count of `0` means no high-severity risks, not that the agent is free of all risk. Lower-severity findings remain visible in the individual security portals. There can also be a delay of up to an hour between a detection appearing in a security portal and the count updating here.
-
-1. Select your agent **finley-<inject key="DeploymentID" enableCopy="false"/>** to open the details pane, and review the **Permissions** section to confirm what the agent has been granted.
-
-1. Navigate to **Agents** > **Overview** and review the governance action cards, which surface items such as **Pending requests**, **Agents at risk**, and **Agents without owners**.
-
-    ![](./media/a365-ex2-t6-02.png)
-
-    >**Note:** Card names and layout on this dashboard change frequently as the preview evolves. Focus on locating the governance cards rather than matching exact tile titles.
-
-1. Confirm that **Agents without owners** does not include your agent, because you assigned owners in Exercise 1.
-
-    >**Note:** Selecting the **Agents without owners** card filters the agent list to ownerless agents so you can triage them directly. Because you closed Finley's accountability gap in Exercise 1, Finley should not appear in that filtered view.
-
-    >**Note:** Governance actions such as approving agent requests or assigning ownership can only be performed by users in the **AI Administrator** or **Global Administrator** roles. Other roles can view governance gaps but cannot remediate them.
+    ![](./media/ex2-30.png)
 
 ## Conclusion
 
@@ -375,4 +341,4 @@ In this exercise, you reviewed the Agent 365 default policy template and mapped 
 
 Click **Next** from the lower right corner to move on to the next page.
 
-![Next button in the lower right corner of the lab guide](./media/a365-gs-07.png)
+![](./media/next.png)
