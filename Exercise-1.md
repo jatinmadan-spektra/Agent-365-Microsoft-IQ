@@ -17,15 +17,15 @@ You will also confirm an **owner** and a **sponsor**. A sponsor is the person ac
 
 In this exercise you will:
 
-- Verify the Agent 365 CLI and authenticate to Azure
-- Provision the agent blueprint, its principal, permissions, and agent identity in a single command
-- Verify the blueprint and its granted permissions in the Microsoft Entra admin center
-- Confirm and complete owner and sponsor accountability in the portal
-- Confirm the agent appears in the Agent 365 registry
+- Install the Agent 365 CLI on the lab virtual machine and authenticate to Azure with the Azure CLI
+- Provision the agent blueprint, its principal, its inheritable permissions, the agent identity, and the registry entry in a single `a365 setup all` command, including the interactive admin consent flow
+- Verify the blueprint, its granted permissions, and its linked agent identity in the Microsoft Entra admin center
+- Confirm the owner and sponsor the CLI created, and close the accountability gaps it leaves on the agent blueprint principal and the agent identity
+- Confirm the agent appears in the Agent 365 registry in the Microsoft 365 admin center and review its status, permissions, and owner
 
 ## Objectives
 
-- **Task 1**: Verify the Agent 365 CLI and authenticate to Azure
+- **Task 1**: Install the Agent 365 CLI and authenticate to Azure
 - **Task 2**: Provision the agent blueprint using the Agent 365 CLI
 - **Task 3**: Verify the blueprint and permissions in Microsoft Entra
 - **Task 4**: Confirm and complete owner and sponsor accountability
@@ -101,13 +101,12 @@ In this task you prepare your tooling. The Agent 365 CLI is a .NET global tool, 
 
     >**Note:** If you are already signed in from a previous session, `az account show` returns your context and you can skip `az login`.
 
-You now have the Agent 365 CLI verified and an authenticated Azure context.
+You now have the Agent 365 CLI installed and verified, and an authenticated Azure context.
 
 ### Task 2: Provision the agent blueprint using the Agent 365 CLI
 
-In this task you run a single command that does a surprising amount of work: it registers the agent identity blueprint and its principal in Microsoft Entra, configures the inheritable Microsoft Graph and Agent 365 permissions that agent identities will receive, creates the agent identity, and registers the agent in the Agent 365 registry.
+In this task, you run a single command that does a surprising amount of work: it registers the agent identity blueprint and its principal in Microsoft Entra, configures the inheritable Microsoft Graph and Agent 365 permissions that agent identities will receive, creates the agent identity, and registers the agent in the Agent 365 registry.
 
->**Note:** This command is **interactive**. It pauses for a confirmation prompt and opens a browser for admin consent. Stay at the keyboard for the whole run - do not start it and walk away.
 
 1. In PowerShell, create and move into a clean working folder for the agent. The CLI writes its configuration output here, so keep track of this folder.
 
@@ -126,9 +125,9 @@ In this task you run a single command that does a surprising amount of work: it 
     
     ![](./media/ex1-9.png)
 
-    >**Note:** For Enter a cliennt app ID, or [C] to create one: type **C**.
+    >**Note:** At the **Enter a client app ID, or [C] to create one:** prompt, type **C**.
 
-    >**Note:** Enter the sign in details from the environment tab.
+    >**Note:** When prompted to sign in, use the credentials from the **Environment** tab.
 
 1. The CLI opens a browser window requesting admin consent for the permissions the blueprint needs. Review the requested permissions and select **Accept**.
 
@@ -140,7 +139,7 @@ In this task you run a single command that does a surprising amount of work: it 
 
     Type **y** and press **Enter**.
 
-    >**Note:** If  prompted to provide consent type **y** in all state. 
+    >**Note:** If you are prompted to provide consent again, type **y** at every prompt.
 
 1. The CLI opens a browser window requesting **admin consent** for the delegated permissions the blueprint needs. Review the requested permissions and select **Allow**.
 
@@ -255,7 +254,7 @@ Creating the blueprint through the CLI is fast, but as an administrator you shou
 
 An agent with no accountable human is a governance gap, and the Microsoft 365 admin center surfaces "agents without owners" as a governance action precisely because ownerless agents accumulate risk.
 
-The Agent 365 CLI assigns you as **owner and sponsor of the agent blueprint** when it creates it, but it stops there. In this task you verify what the CLI did, then close the two gaps it leaves: the **agent blueprint principal has no owner or sponsor**, and the **agent identity has a sponsor but no owner**.
+The Agent 365 CLI assigns you as **owner and sponsor of the agent blueprint** when it creates it, but it stops there. In this task, you verify what the CLI did, then close the two gaps it leaves: the **agent blueprint principal has no owner or sponsor**, and the **agent identity has a sponsor but no owner**.
 
 1. Still in the Microsoft Entra admin center, navigate to **Entra ID (1)** > **Agents (2)** > **Agent blueprints (3)**.
 
@@ -347,7 +346,7 @@ The Microsoft Entra admin center shows you the identity. The **Agent 365 registr
 
 ## Conclusion
 
-In this exercise you gave Contoso's expense agent a real enterprise identity. You verified the Agent 365 CLI, provisioned an agent identity blueprint together with its principal, its inheritable Graph permissions, an agent identity, and a registry entry, verified in the Microsoft Entra admin center that permissions were actually granted rather than left pending, confirmed and completed owner and sponsor accountability at both the blueprint and identity level, and confirmed the agent is visible in the Agent 365 registry.
+In this exercise, you gave Contoso's expense agent a real enterprise identity. You installed and verified the Agent 365 CLI and authenticated to Azure, then used a single `a365 setup all` command to provision an agent identity blueprint together with its blueprint principal, its inheritable Microsoft Graph and Agent 365 permissions, the agent identity itself, and its registry entry. You verified in the Microsoft Entra admin center that the permissions were actually granted rather than left pending, and that the agent identity is linked to the blueprint and visible tenant-wide. You then confirmed the owner and sponsor the CLI recorded on the blueprint and closed the accountability gaps it leaves, adding an owner and sponsor to the agent blueprint principal and an owner to the agent identity. Finally, you confirmed the agent is discoverable in the Agent 365 registry in the Microsoft 365 admin center, with a status of **Available** and no risks.
 
 The important idea here is sequencing. Identity comes first, because every governance control in the exercises that follow, whether a Conditional Access policy, a device compliance requirement, or an audit query, targets this identity. Without it, there is nothing to govern.
 
@@ -355,15 +354,14 @@ The important idea here is sequencing. Identity comes first, because every gover
 
 In this exercise, you have completed the following:
 
-- Verified the Agent 365 CLI and authenticated to Azure
+- Installed the Agent 365 CLI and authenticated to Azure
 - Provisioned the agent blueprint using the Agent 365 CLI
 - Verified the blueprint and permissions in Microsoft Entra
 - Confirmed and completed owner and sponsor accountability
 - Confirmed the agent in the Agent 365 registry
-
 ## Summary
 
-In this exercise, you created an agent identity blueprint and agent identity in Microsoft Entra using the Agent 365 CLI, established accountability through owners and sponsors, and verified the agent is discoverable and governable in the Agent 365 registry. This identity is the foundation for the policies, compute, and observability you configure in the remaining exercises.
+In this exercise, you created an agent identity blueprint and an agent identity in Microsoft Entra using the Agent 365 CLI, verified the granted permissions in the Microsoft Entra admin center, established accountability by recording owners and sponsors on the blueprint, the blueprint principal, and the agent identity, and confirmed the agent is discoverable and governable in the Agent 365 registry. This identity is the foundation for the policies, compute, and observability you configure in the remaining exercises.
 
 Click **Next** from the lower right corner to move on to the next page.
 

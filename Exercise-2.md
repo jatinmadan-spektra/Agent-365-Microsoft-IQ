@@ -20,18 +20,13 @@ Two Conditional Access patterns matter for agents:
 - **Attribute-driven access**: You tag agent identities with **custom security attributes**, then write a policy that targets those tags. As the number of agents grows, managing each one individually in every policy becomes unsustainable. Tagging scales; individual selection does not.
 - **Risk-based access**: You block agents that Microsoft Entra ID Protection flags as high risk, the same way you would block a risky user sign-in.
 
->**Note:** Every Conditional Access policy in this exercise is created in **Report-only** mode first. Report-only mode evaluates the policy and logs what *would* have happened without actually enforcing it. This is how you validate a policy safely before it can lock out a legitimate agent.
-
->**Note:** This exercise targets **agent identities**, which is the correct scope for Finley. Conditional Access also supports **agent users (Preview)**, a different object type used by agents that have their own mailbox and user account. Controls such as device compliance and compliant network are available **only** for agent users, not for agent identities. Finley has an agent identity and no agent user, which is why every policy here uses **Block** as its control.
-
 In this exercise you will:
 
-- Review the Microsoft default policy template and map its protections to their source services
-- Configure tenant guardrails under Agent settings
-- Grant yourself the attribute administrator roles, then create and assign custom security attributes
-- Build an attribute-driven Conditional Access policy allowing only approved agents
-- Build a risk-based Conditional Access policy blocking high-risk agents
-- Review conformance and risk signals in the registry
+- Review the Microsoft default policy template in the Microsoft 365 admin center and map each bundled policy back to the service that implements it
+- Configure tenant-wide guardrails under Agent settings, covering allowed agent types, sharing, user access, and agent management rules
+- Create a custom security attribute set with predefined approval values, and assign an approval value to the Finley agent identity
+- Build an attribute-driven Conditional Access policy that blocks every agent identity except those tagged as approved
+- Build a risk-based Conditional Access policy that blocks agent identities flagged as high risk, and confirm both policies are created in Report-only mode
 
 ## Objectives
 
@@ -40,7 +35,6 @@ In this exercise you will:
 - **Task 3**: Create and assign custom security attributes
 - **Task 4**: Create an attribute-driven Conditional Access policy
 - **Task 5**: Create a Conditional Access policy for high-risk agents
-- **Task 6**: Review conformance and risk signals in the registry
 
 ### Task 1: Review the Microsoft default policy template
 
@@ -107,7 +101,7 @@ Policy templates govern individual agents. Agent settings govern the whole tenan
    - **No users** - org-level sharing is disabled, though users can still share directly with specific individuals
    - **Specific users** - restrict broad sharing permissions to designated groups
 
-1. Select **Specific users (1)**, then select the your **lab user (2)**. Select **Save (3)**.
+1. Select **Specific users (1)**, then select your **lab user (2)**. Select **Save (3)**.
 
     ![](./media/ex2-7.png)
 
@@ -137,8 +131,6 @@ Policy templates govern individual agents. Agent settings govern the whole tenan
 You cannot write "only approved agents may access Finance resources" until you have a way to record which agents are approved. Custom security attributes are that mechanism: business-specific key-value pairs you attach to directory objects and then target in policy.
 
 **Global Administrator does not include permission to define or assign custom security attributes.** These permissions are deliberately separated from tenant administration, so even a Global Administrator sees the attribute controls greyed out until the correct roles are assigned. Your first job in this task is to grant yourself those roles.
-
->**Note:** This role separation is intentional. Custom security attributes can drive access control decisions, so Microsoft keeps their management behind dedicated roles rather than bundling them into Global Administrator. A Global Administrator **can** assign these roles to themselves, which is what you do next.
 
 1. Switch to the Microsoft Entra admin center tab, or navigate to:
 
@@ -194,7 +186,7 @@ You cannot write "only approved agents may access Finance resources" until you h
 
     ![](./media/ex2-14.png)
 
-1. Because you selected **Yes** for predefined values, select **+ Add value (1)** and **add (4)** each of the following values, leaving **Is active?** set to **Yes (3)** for each:
+1. Because you selected **Yes** for predefined values, select **+ Add value (1)**, enter the value **(2)**, leave **Is active?** set to **Yes (3)**, and then select **Add (4)**. Repeat this for each of the following values:
 
    - **New**
    - **In_Review**
@@ -247,6 +239,7 @@ Now you build the rule that uses the tag. The policy blocks all agent identities
     ```
     CA-Agents-BlockUnapprovedAgents
     ```
+
 1. Under **Assignments**, select **Users or agents (2)**.
 
 1. Under **What does this policy apply to?**, select **Agents (3)**.
@@ -284,7 +277,7 @@ Now you build the rule that uses the tag. The policy blocks all agent identities
 
 ### Task 5: Create a Conditional Access policy for high-risk agents
 
-The previous policy answers "is this agent approved?". This one answers a different question: "has this agent started behaving suspiciously?". Microsoft Entra ID Protection generates risk signals for agent identities, and Conditional Access can act on them.
+The previous policy answers the question "Is this agent approved?". This one answers a different question: "Has this agent started behaving suspiciously?". Microsoft Entra ID Protection generates risk signals for agent identities, and Conditional Access can act on them.
 
 1. Still in **Entra ID** > **Conditional Access** > **Policies**, select **+ New policy**.
 
@@ -304,7 +297,7 @@ The previous policy answers "is this agent approved?". This one answers a differ
 
 1. Under **Conditions**, select **Agent risk (Preview)** and set **Configure** to **Yes (1)**.
 
-1. Under **Configure agent risk levels needed for policy to be enforced**, select **High (2)** and click **Done (3)**.
+1. Under **Configure agent risk levels needed for policy to be enforced**, select **High (2)** and selecy **Done (3)**.
 
     ![](./media/ex2-29.png)
 
@@ -320,7 +313,7 @@ The previous policy answers "is this agent approved?". This one answers a differ
 
 ## Conclusion
 
-In this exercise you moved Finley from "exists" to "constrained". You reviewed the protections Microsoft enforces by default and traced each back to the service that implements it, tightened tenant-wide guardrails through Agent settings, granted yourself the attribute administrator roles that even a Global Administrator lacks by default, and built the two Conditional Access patterns that matter most for agents at scale: attribute-driven approval and risk-based blocking.
+In this exercise, you moved Finley from "exists" to "constrained". You reviewed the protections Microsoft enforces by default and traced each bundled policy back to the service that implements it, then tightened tenant-wide guardrails through Agent settings by confirming allowed agent types, restricting sharing to specific users, reviewing user access, and examining the rule-based bulk actions available for agents. You created a custom security attribute set with predefined approval values and tagged the Finley agent identity as **Finance_Approved**, then built the two Conditional Access patterns that matter most for agents at scale: an attribute-driven policy that blocks every agent identity except the approved ones, and a risk-based policy that blocks agent identities Microsoft Entra ID Protection flags as high risk. Both were created in **Report-only** mode so their impact can be evaluated before enforcement.
 
 The most transferable idea here is the attribute pattern. Selecting individual agents in a policy works when you have three agents and collapses when you have three hundred. Tagging identities and targeting the tag means policies automatically cover agents that do not exist yet, which is the only approach that survives growth.
 
@@ -333,11 +326,10 @@ In this exercise, you have completed the following:
 - Created and assigned custom security attributes
 - Created an attribute-driven Conditional Access policy
 - Created a Conditional Access policy for high-risk agents
-- Reviewed conformance and risk signals in the registry
 
 ## Summary
 
-In this exercise, you reviewed the Agent 365 default policy template and mapped its protections to Entra, Purview, SharePoint, and Defender, configured tenant-wide agent guardrails, and built attribute-driven and risk-based Conditional Access policies for agents, validating both safely in report-only mode. These policies govern the same agent identity you provisioned in Exercise 1 and will continue to apply to it in Exercises 3 and 4.
+In this exercise, you reviewed the Agent 365 default policy template and mapped each bundled policy back to the Microsoft Purview and Microsoft Entra capabilities that enforce it, configured tenant-wide agent guardrails in Agent settings, created a custom security attribute set and tagged the Finley agent identity with an approval value, and built attribute-driven and risk-based Conditional Access policies for agents, validating both safely in Report-only mode. These policies govern the same agent identity you provisioned in Exercise 1 and will continue to apply to it in Exercises 3 and 4.
 
 Click **Next** from the lower right corner to move on to the next page.
 
