@@ -101,7 +101,7 @@ Policy templates govern individual agents. Agent settings govern the whole tenan
    - **No users** - org-level sharing is disabled, though users can still share directly with specific individuals
    - **Specific users** - restrict broad sharing permissions to designated groups
 
-1. Select **Specific users (1)**, then select your **lab user (2)**. Select **Save (3)**.
+1. Select **Specific users (1)**, then select your **lab user <inject key="AzureAdUserEmail"></inject>(2)**. Select **Save (3)**.
 
     ![](./media/ex2-7.png)
 
@@ -140,15 +140,17 @@ You cannot write "only approved agents may access Finance resources" until you h
 
 1. In the left navigation pane, expand **Entra ID (1)** and select **Roles & admins (2)**.
 
-    ![](./media/a365-ex2-t3-01.png)
+    ![](./media/ex2-31.png)
 
 1. In the search box, type **Attribute Definition Administrator** and select the role from the results.
 
+    ![](./media/ex2-32.png)
+
 1. Select **+ Add assignments**.
 
-1. Select your lab user account <inject key="AzureAdUserEmail"></inject>, then select **Add**.
+    ![](./media/ex2-33.png)
 
-    ![](./media/a365-ex2-t3-02.png)
+1. Select your lab user account <inject key="AzureAdUserEmail"></inject>, then select **Add**.  
 
 1. Return to **Roles & admins**, search for **Attribute Assignment Administrator**, and repeat the assignment for the same account.
 

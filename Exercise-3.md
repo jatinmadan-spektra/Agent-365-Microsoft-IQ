@@ -2,44 +2,189 @@
 
 ### Estimated Duration: 60 minutes
 
-Some agents only need APIs. Others need to operate a Windows desktop, clicking through applications the way a person would. In this exercise you provision a Cloud PC agent pool for Finley, require device compliance for agent sessions, and then decommission the pool cleanly.
+Some agents only need APIs. Others must operate a Windows desktop, clicking through applications the way a person would. In this exercise you establish the compute case for Finley, create the Windows 365 for Agents billing plan that meters agent compute, define what a healthy agent device looks like, scope that definition so it never touches employee laptops, and enforce it with Conditional Access.
 
 ## Overview
 
 **Windows 365 for Agents** provides AI agents with secure, on-demand Cloud PCs that have a managed identity, device posture, and a governed agent session lifecycle. It exists to support **computer-using agents (CUA)**: agents that complete tasks by operating a desktop environment rather than calling an API.
 
-This matters for Contoso because their legacy expense portal has no API. Finley has to open it, log in, and enter data through the interface, exactly as a human would. That requires a machine.
+This matters for Contoso because their legacy expense portal has no API. Finley has to open it, sign in, and enter data through the interface, exactly as a person would. That requires a machine.
 
-Two concepts to understand before you begin:
+But buying the compute is the easy part. The part that decides whether agent compute is safe to deploy is everything that has to be true *before* a Cloud PC is handed to an agent:
 
-- A **provisioning policy (agents)** in Microsoft Intune defines the configuration used to create Cloud PCs for Agents. In Intune, a provisioning policy (agents) *is* a **Cloud PC agent pool**. The policy and the pool are the same object viewed two ways.
+- Someone deliberately decided the agent needs a desktop, rather than defaulting to one.
+- The cost meter is created, understood, and owned by a named person.
+- "Healthy" is defined for agent devices, in writing, as policy.
+- That definition is scoped so it governs agent devices and nothing else.
+- Access is denied when a device fails the definition.
+
+In this exercise you build exactly that layer, for the same Finley agent you gave an identity in Exercise 1 and wrote policy for in Exercise 2.
+
+Three concepts to understand before you begin:
+
+- A **Windows 365 for Agents billing plan** is the meter for agent compute. Unlike Windows 365 Enterprise, which is licensed per named user, Windows 365 for Agents is **consumption-billed** against this plan.
+- A **provisioning policy (agents)** in Microsoft Intune defines the configuration used to create Cloud PCs for Agents. In Intune, a provisioning policy (agents) *is* a **Cloud PC agent pool** — the policy and the pool are the same object viewed two ways.
 - The **Agent execution environments** Conditional Access condition restricts a policy so it only applies when an agent session is initiated **from an endpoint**. This is essential: agents running directly in Microsoft infrastructure have no associated device, so without this condition a device-compliance policy would block them with no possible path to compliance.
 
->**Note:** Cloud PC provisioning takes **20 to 30 minutes**. Task 3 is deliberately placed to run during that wait. Do not reorder the tasks, or you will spend twenty minutes watching a progress indicator.
+>**Note:** In this exercise you create the billing plan and review the agent pool configuration model, but you do **not** provision Cloud PCs. Every control you build works whether or not a Cloud PC exists yet, which is exactly how governance should be sequenced in production: the guardrail is defined before the resource arrives, not after.
 
->**Note:** Windows 365 for Agents is **consumption-billed**. Cloud PCs continue to incur cost until the provisioning policy is deleted. Task 5 is a mandatory teardown step, not an optional cleanup.
+## In this exercise you will
 
-In this exercise you will:
-
-- Verify the Windows 365 for Agents prerequisites and billing plan
-- Create a provisioning policy (agents) and assign Finley to it
-- Create a Conditional Access policy requiring a compliant device for agent sessions
-- Verify the provisioned Cloud PCs and review session usage
-- Delete the provisioning policy to stop consumption
+- Establish the compute case for the agent and confirm its accountability
+- Create the Windows 365 for Agents billing plan and review the agent compute model
+- Define the compliance baseline for agent Cloud PCs
+- Scope the baseline so it applies only to agent devices
+- Require a compliant device for agent sessions and validate the policy
+- Apply cost governance and decommission the billing plan
 
 ## Objectives
 
-- **Task 1**: Verify prerequisites and the Windows 365 for Agents billing plan
-- **Task 2**: Create a provisioning policy (agents) in Microsoft Intune
-- **Task 3**: Require a compliant device for agent user accounts
-- **Task 4**: Verify Cloud PCs and review session usage
-- **Task 5**: Delete the provisioning policy (mandatory teardown)
+- **Task 1**: Establish the compute case for the agent and confirm its accountability
+- **Task 2**: Create the Windows 365 for Agents billing plan and review the agent compute model
+- **Task 3**: Define the compliance baseline for agent Cloud PCs
+- **Task 4**: Scope the baseline to agent devices only
+- **Task 5**: Require a compliant device for agent sessions and validate
+- **Task 6**: Apply cost governance and decommission the billing plan
 
-### Task 1: Verify prerequisites and the Windows 365 for Agents billing plan
+### Task 1: Establish the compute case for the agent and confirm its accountability
 
-Three things must be in place before a provisioning policy can be created. If any is missing, the **Provisioning policies (Agents)** option will either be hidden or the policy creation will fail at the billing plan step.
+Before provisioning any compute, an administrator has to answer two questions: does this agent actually need a desktop, and is someone accountable for it. In this task you answer both for Finley, and record the answer where an auditor can find it.
 
-1. On the lab virtual machine, open a new browser tab and navigate to the Microsoft Intune admin center:
+1. On the lab virtual machine, open **Microsoft Edge** and navigate to the Microsoft 365 admin center:
+
+    ```
+    https://admin.microsoft.com/
+    ```
+
+1. If prompted, sign in with the following credentials:
+
+   - **Email/Username:** <inject key="AzureAdUserEmail"></inject>
+   - **Password:** <inject key="AzureAdUserPassword"></inject>
+
+1. In the left navigation pane, Select **Agents (1)** > **All agents (2)**, and make sure the **Registry (3)** tab is selected and locate the agent **finley-<inject key="DeploymentID" enableCopy="false"/> (4)** that you created in Exercise 1.
+
+    ![](./media/ex3-01.png)
+
+1. Select the agent to open its details pane. Review the following, exactly as you did in Exercise 1, Task 5:
+
+   - The **Owner**
+   - The agent's **Permissions**
+   - The **Status** of the agent
+
+1. While reviewing the agent's properties, tools, and permissions. Note what Finley can already reach **without** a desktop, because that is the baseline against which the Cloud PC decision is justified.
+
+1. Recall the distinction established in Exercise 1 between the two objects that represent your agent:
+
+    | Object | What it is | What it is used for |
+    | --- | --- | --- |
+    | **Agent identity** | The application-like identity of the agent itself | Permissions, API access, blueprint-derived configuration |
+    | **Agent user account** | A user-like identity the agent holds | Licenses, collaboration, and **device compliance evaluation** |
+
+1. Now apply the compute decision framework. Not every agent needs a machine, and provisioning one reflexively wastes money and adds attack surface:
+
+    | Pattern | What it means | Does it need a Cloud PC? |
+    | --- | --- | --- |
+    | **API-first** | The target system exposes an API the agent can call directly | **No.** Cheapest option, smallest attack surface |
+    | **CUA (computer-using agent)** | The agent reasons about a screen and adapts to what it sees | **Yes.** Requires a desktop to operate |
+    | **RPA (robotic process automation)** | A fixed, scripted sequence repeated identically | Needs a runner, but no reasoning and often no full desktop |
+
+1. Apply the framework to Contoso's scenario and confirm the conclusion:
+
+   - Contoso's legacy expense portal has **no API**, so API-first is not available.
+   - The portal's interface **changes between releases**, so a fixed RPA script would break on every release.
+   - Finley must therefore reason about the screen and adapt, which makes this a **CUA scenario** that justifies a Cloud PC.
+
+1. Also decide how the agent will run, because it changes how strictly you must govern it:
+
+   - **Attended** execution means a human is present and can approve or intervene.
+   - **Unattended** execution means the agent runs with no human present, on a schedule or in response to an event.
+
+    >**Note:** Finley processes expenses on a schedule overnight, so it is **unattended**. Unattended agents need stricter Conditional Access than attended ones, because there is no human present to notice a mistake or a compromised session.
+
+1. Record the decision so it is auditable rather than tribal knowledge. Switch to the Microsoft Entra admin center:
+
+    ```
+    https://entra.microsoft.com
+    ```
+
+1. In the left navigation pane, expand **Entra ID (1)** and select **Custom security attributes (2)**, then open the attribute set you created in **Exercise 2**.
+
+    ![](./media/ex3-1.png)
+
+1. Select **Add attribute** and create a new attribute with the following values:
+
+   - **Attribute name:** **RequiresDesktopCompute**
+   - **Description:** **Records whether this agent has an approved business case for a Cloud PC**
+   - **Data type:** **String**
+   - **Allow multiple values to be assigned:** **No**
+   - **Only allow predefined values to be assigned:** **Yes**
+   - **Predefined values:** **Yes** and **No**
+     
+       ![](./media/ex3-2.png)
+
+       ![](./media/ex3-3.png)
+
+1. Select **Save**.
+
+1. Navigate back to **Entra ID** > **Agents** > **Agent identities**, select your agent **finley-<inject key="DeploymentID" enableCopy="false"/> Identity**, open its **Custom security attributes (1)** section, and select **Add assignment (2)**.
+
+    ![](./media/ex3-4.png)
+
+1. Assign the attribute you just created:
+
+   - **Attribute set:** **AgentAttributes**
+   - **Attribute name:** **RequiresDesktopCompute**
+   - **Assigned value:** **Yes**
+
+     ![](./media/ex3-5.png)
+
+1. Select **Save**, then refresh the page and confirm the value persisted.
+
+### Task 2: Create the Windows 365 for Agents billing plan and review the agent compute model
+
+Agent compute is metered differently from the rest of Windows 365. In this task you create that meter, then review the pool configuration model that runs on top of it.
+
+1. Open a new browser tab and navigate to the Microsoft 365 admin center:
+
+    ```
+    https://admin.microsoft.com/
+    ```
+1. In the left navigation pane, select **Copilot (1)**, then select **Cost management (2)**.
+
+1. At the top of the page, select the classic **Billing & usage (3)** link.
+
+    ![](./media/ex3-6.png)
+
+1. Select **Billing policies (1)**, then select **Add a billing policy (2)** and provide the following:
+
+   - **Name:** **finley-plan-<inject key="DeploymentID" enableCopy="false"/> (1)**
+   - **Azure subscription:** select the lab subscription **(2)**
+   - **Resource group:** select the lab resource group **(3)**
+   - **Region:** select the region closest to your lab, in the same country or continent group as the geography you will pick in Intune later in this task **(4)**
+   - Select **Checkbox** to accept terms of service.
+   - Click **Next (6)**
+
+     ![](./media/ex3-7.png)
+
+     ![](./media/ex3-8.png)
+
+1. Click **Next** on choose user tab.
+
+1. On the Budget tab, select the **Checkbox (1)** to set a budget for this policy, enter **10 (2)** in the Amount textbox, and click **Next (3)**.
+
+     ![](./media/ex3-9.png)
+
+1. Review the details and click **Create Policy**.
+
+1. Return to **Billing & usage**, select **Pay-as-you-go services (1)**, then open **Windows 365 for Agents (2)**.
+
+     ![](./media/ex3-10.png)
+
+1. Switch its **Connection status (1)** toggle on and click **Save (2)**. Confirm the row now reads **Connected** 
+
+    ![](./media/ex3-11.png)
+
+1. Open a new browser tab and navigate to the Microsoft Intune admin center:
 
     ```
     https://intune.microsoft.com/
@@ -50,99 +195,176 @@ Three things must be in place before a provisioning policy can be created. If an
    - **Email/Username:** <inject key="AzureAdUserEmail"></inject>
    - **Password:** <inject key="AzureAdUserPassword"></inject>
 
-1. Confirm the three prerequisites for creating a provisioning policy (agents) are met:
+1. In the left navigation pane, select **Devices (1)**, then under **Manage Windows 365 Cloud Pcs** select **Provision Cloud PCs (2)**.
 
-    | Prerequisite | Why it is needed | Pre-staged in this lab |
+    ![](./media/ex3-12.png)
+
+1. Select the **Provisioning policies (Agents)** tab, and select **Set up Windows 365 for Agents**.
+
+    ![](./media/ex3-14.png)
+
+1. On the **Set up Windows 365 for Agents** screen, toggle **Turn on Windows 365 for Agents for your tenant** to **On**.
+    
+     ![](./media/ex3-15.png)
+
+1. Now return to the **Windows powershell** and run the below command:
+
+    ```
+    $token = az account get-access-token --resource "https://graph.microsoft.com" --query accessToken -o tsv
+    $body = @{
+            "@odata.type"       = "#microsoft.graph.agentUser"
+            "accountEnabled"    = $true
+            "displayName"       = "Finley Cloud PC Agent"
+            "mailNickname"      = "finley_agent"
+            "userPrincipalName" = "finley_agent@otuwamsbxxxxxx.onmicrosoft.com"
+            "identityParentId"  = "Agent Object Id"
+    } | ConvertTo-Json
+ 
+    Invoke-RestMethod -Method Post -Uri "https://graph.microsoft.com/beta/users" -Headers @{ Authorization = "Bearer $token" } -ContentType "application/json" -Body $body
+    ```
+    >**Note:** Replace **otuwamsbxxxxxx.onmicrosoft.com** from the **environment** tab.
+
+    >**Note:** Replace **Agent Object Id** by navigating to **Entra admin center**, Entra ID > Agents > Agent Identities and Copy **Object Id**. 
+
+    >![](./media/ex3-16.png)
+
+    ![](./media/ex3-13.png)
+
+1. Once completed, navigate back to the **Provision policies (Agents)** tab. You should now see the **+ Create policy (Agents)** option enabled.
+    
+     ![](./media/ex3-17.png)
+
+1. Select **+ Create policy (Agents)** to open the wizard, and step through the pages to review what a Cloud PC agent pool defines.
+
+    >**Note:** You are reviewing the configuration surface, not provisioning Cloud PCs. **Do not complete this wizard.** You will cancel it at the end of this task. Provisioning Cloud PCs takes 20 to 30 minutes and immediately begins consumption billing, neither of which is needed to build the controls in this exercise.
+
+1. On the **General (1)** page, review the following settings and note what each one controls:
+
+    | Setting | What it controls | Governance consideration |
     | --- | --- | --- |
-    | Microsoft Intune license | Provisioning policies and device compliance live in Intune | Yes |
-    | Agent 365 license in the tenant | Agents must exist in the Agent 365 platform to be assignable | Yes |
-    | Active Windows 365 for Agents billing plan | Cloud PCs are consumption-billed against this plan | Yes |
+    | **Billing plan** | Which meter the pool bills against | This is where the plan you just created is consumed |
+    | **Always available Cloud PCs count** | How many Cloud PCs are provisioned and kept ready (1–200) | Each one is provisioned immediately and billed continuously. This number must reflect real concurrency, not optimism |
+    | **Geography** | Where the agent's desktop and its data reside | A data residency decision, not a performance one |
 
-1. In the left navigation pane, select **Devices (1)**, then under **Device onboarding** select **Provision Cloud PCs (2)**.
+    ![](./media/ex3-18.png)
 
-    ![Microsoft Intune admin center with Devices and Provision Cloud PCs selected](./media/a365-ex3-t1-01.png)
+    >**Note:** You may enter the details shown in the image to proceed. Make sure not to click Create policy at the end.
 
-1. Select the **Provisioning policies (Agents)** tab and confirm it is available.
+1. Select **Next (2)** and review the **Agents** page. Select **Add Agents** to see the agent picker.
+    
+    ![](./media/ex3-20.png)
 
-    ![Provision Cloud PCs page showing the Provisioning policies (Agents) tab](./media/a365-ex3-t1-02.png)
+    ![](./media/ex3-19.png)
 
-    >**Note:** If this tab is missing, the tenant is missing either the Agent 365 license or the Windows 365 for Agents billing plan. Contact lab support before continuing.
+1. Close the agent picker after selecting an agent, then select **Next** and review the **Image** page. Note the two image types available:
 
-1. Before creating the policy, understand when a Cloud PC is the right choice. Review the distinction below:
+   - **Gallery image** — the default images Microsoft provides.
+   - **Custom image** — images your organization has uploaded through the **Add device images** workflow.
 
-   - **Computer-using agent (CUA)** - the agent reasons about a screen and adapts to what it sees. Suited to applications with no API, or interfaces that change.
-   - **Robotic process automation (RPA)** - a scripted sequence repeated identically. Suited to stable, high-volume, deterministic tasks.
+     ![](./media/ex3-21.png)
 
-    >**Note:** Finley is a CUA scenario because Contoso's legacy expense portal has no API and its interface changes between releases. Choosing a Cloud PC for a task that a simple API call could handle wastes money and adds attack surface.
+1. Select **Next** and review the **Configuration** page. The **Language & region** value determines which language pack is installed on every Cloud PC provisioned by the policy.
 
-1. Also note the difference between execution modes, because it affects how you design the agent:
+    ![](./media/ex3-22.png)
 
-   - **Attended** execution means a human is present and can approve or intervene.
-   - **Unattended** execution means the agent runs with no human present, on a schedule or in response to an event.
+1. Select **Next** and review the **Scope tags** page.
 
-    >**Note:** Unattended agents need stricter Conditional Access, because there is no human to catch a mistake. This is exactly why Task 3 enforces device compliance.
+1. On **Review + Create** page, Select **Cancel** to exit the wizard **without** creating a policy.
 
-### Task 2: Create a provisioning policy (agents) in Microsoft Intune
+    ![](./media/ex3-23.png)
 
-Now you create the pool. Think of this as IT filling out an equipment order form: which image, which region, how many machines, and who they are for.
+1. Confirm the **Provisioning policies (Agents)** list is still empty, and that no Cloud PCs have been created.
 
-1. On the **Provision Cloud PCs** page, select the **Provisioning policies (Agents)** tab, then select **Create policy**.
+    ![](./media/ex3-24.png)
 
-    ![Provisioning policies (Agents) tab with the Create policy button highlighted](./media/a365-ex3-t2-01.png)
+1. Finally, review the **agent session lifecycle**, which explains why pool sizing works the way it does:
 
-1. On the **General** page, enter the following values:
+   - An agent **claims** a session from the pool when it begins work.
+   - It **holds** the session for the duration of the task.
+   - It **releases** the session back to the pool when it finishes.
 
-   - **Name:** **finley-pool-<inject key="DeploymentID" enableCopy="false"/>**
-   - **Description:** **Cloud PC agent pool for the Finley expense-processing agent**
-   - **Billing plan:** select the available Windows 365 for Agents billing plan
-   - **Always available Cloud PCs count:** **1**
-   - **Geography:** select the geography closest to your lab region
+    >**Note:** This is why a pool of one Cloud PC can serve many sequential agent tasks. Pool size tracks **concurrency**, not the number of agents. Ten agents that never run at the same time need one Cloud PC. Two agents that always run together need two.
 
-    ![General page of the provisioning policy wizard with name and billing plan configured](./media/a365-ex3-t2-02.png)
+### Task 3: Define the compliance baseline for agent Cloud PCs
 
-    >**Note:** The **Always available Cloud PCs count** accepts a value between **1** and **200**. Use **1** for this lab. Each Cloud PC in this count is provisioned immediately and billed continuously, so in production this number should reflect your actual concurrency requirement.
+A Cloud PC for Agents is an Intune-managed Windows device. That means Conditional Access can evaluate its compliance exactly as it would an employee's laptop — but only if you have defined what compliance means. In this task you write that definition.
+
+1. In the Microsoft Intune admin center, in the left navigation pane select **Devices (1)**, then under **Manage devices** select **Compliance (2)**.
+
+    ![](./media/ex3-25.png)
+
+1. On the **Policies** tab, select **+ Create policy**.
+
+    ![](./media/ex3-26.png)
+
+1. In the **Create a policy** pane, select the following, then select **Create (3)**:
+
+   - **Platform:** **Windows 10 and later (1)**
+   - **Profile type:** **Windows 10/11 compliance policy (2)**
+
+    ![](./media/ex3-27.png)
+
+1. On the **Basics** page, enter the following values, then select **Next (3)**:
+
+   - **Name:** **A365-Agent-CloudPC-Compliance-<inject key="DeploymentID" enableCopy="false"/> (1)**
+   - **Description:** **Compliance baseline for Windows 365 Cloud PCs used by agents (2)**
+
+    ![](./media/ex3-28.png)
+
+1. On the **Compliance settings** page, expand **Device Health** and configure:
+
+   - **BitLocker:** **Require**
+   - **Secure Boot:** **Require**
+   - **Code integrity:** **Require**
+
+    ![](./media/ex3-29.png)
+
+1. Expand **Device Properties** and in the **Minimum OS version** field enter the following value. Leave every other field in this section as **Not configured**:
+
+    ```
+    10.0.22000.0
+    ```
+
+    ![](./media/ex3-30.png)
+
+1. Expand **System Security** and configure:
+
+   - **Microsoft Defender Antimalware:** **Require**
+   - **Microsoft Defender Antimalware security intelligence up-to-date:** **Require**
+
+    ![](./media/ex3-31.png)
 
 1. Select **Next**.
 
-1. On the **Agents** page, select **Add Agents**.
+1. On the **Actions for noncompliance** page, review the single action that is already present. **Make no changes on this page.** and Select **Next**.
 
-1. Select the agent **finley-<inject key="DeploymentID" enableCopy="false"/>** that you created in Exercise 1, then select **Save**.
+   - **Action:** **Mark device noncompliant**
+   - **Schedule (days after noncompliance):** **Immediately** — this is fixed and cannot be edited
+   - Leave the empty **Action** dropdown on the row below untouched
 
-    ![Agents page showing the Finley agent selected for assignment to the pool](./media/a365-ex3-t2-03.png)
+    ![](./media/ex3-32.png)
 
-    >**Note:** If your agent does not appear in this picker, its blueprint is missing the `managerApplications` property, which happens when a blueprint is created through the Microsoft Entra portal wizard instead of the Agent 365 CLI. Return to Exercise 1 and re-run `a365 setup all`.
-
-1. Select **Next**.
-
-1. On the **Image** page, for **Image type**, select **Gallery image**, then select **Select**, choose an available gallery image, and select **Select** again.
-
-    ![Image page with a gallery image selected](./media/a365-ex3-t2-04.png)
-
-    >**Note:** Gallery images are the default images Microsoft provides. **Custom image** lists images your organization has uploaded through the Add device images workflow, which is how you would pre-install a line-of-business application the agent needs.
-
-1. Select **Next**.
-
-1. On the **Configuration** page, under **Windows settings**, select a **Language & region** value. The matching language pack is installed on every Cloud PC provisioned by this policy.
-
-    ![Configuration page with language and region selected](./media/a365-ex3-t2-05.png)
-
-1. Select **Next**.
-
-1. On the **Scope tags** page, leave the default and select **Next**.
-
-    >**Note:** Scope tags are used in larger organizations to delegate administration, so that a regional IT team can only see and manage the resources tagged for their region.
+1. On the **Assignments** page, do **not** assign the policy yet. Select **Next**.
 
 1. On the **Review + create** page, review your configuration and select **Create**.
 
-    ![Review and create page showing the completed provisioning policy configuration](./media/a365-ex3-t2-06.png)
+    ![](./media/ex3-33.png)
 
-1. Windows 365 automatically begins provisioning the Cloud PCs. **Provisioning takes approximately 20 to 30 minutes.**
+1. Confirm the policy appears in the **Policies** list.
 
-    >**Note:** Do not wait here. Continue directly to Task 3, which is designed to be completed while provisioning runs in the background. You will return to verify the result in Task 4.
+    ![](./media/ex3-34.png)
 
-### Task 3: Require a compliant device for agent user accounts
+### Task 4: Scope the baseline to agent devices only
 
-While the Cloud PC provisions, you add the control that makes it trustworthy. A Cloud PC for Agents is an Intune-managed Windows device, which means Conditional Access can evaluate its compliance status exactly as it would an employee's laptop.
+The policy you just wrote is deliberately strict. Assigned carelessly, it would measure every employee laptop in the tenant against a standard written for unattended agent compute. In this task you scope it so it governs agent devices and nothing else.
+
+1. Consider what would happen if you assigned the Task 3 policy to **All devices**:
+
+   - Every corporate Windows device would be evaluated against a zero-grace-period, code-integrity-required baseline.
+   - Devices that fail would be marked noncompliant **immediately**, with no grace window.
+   - Any Conditional Access policy requiring compliance would then start blocking real users.
+
+    >**Note:** This is the most common way a well-intentioned compliance policy causes an outage. The policy is not wrong; the assignment is. Scoping is what makes a strict baseline politically survivable, and a baseline nobody can safely assign is a baseline that never ships.
 
 1. Switch to the Microsoft Entra admin center tab, or navigate to:
 
@@ -150,117 +372,226 @@ While the Cloud PC provisions, you add the control that makes it trustworthy. A 
     https://entra.microsoft.com
     ```
 
-1. In the left navigation pane, expand **Entra ID (1)**, select **Conditional Access (2)**, then select **Policies (3)**.
+1. In the left navigation pane, expand **Groups (1)** and select **All groups (2)**, then select **New group (3)**.
+
+    ![](./media/ex3-35.png)
+
+1. On the **New Group** page, configure the following:
+
+   - **Group type:** **Security**
+   - **Group name:** **A365-Agent-CloudPCs-<inject key="DeploymentID" enableCopy="false"/>**
+   - **Group description:** **Cloud PCs provisioned for agents, scoped by enrollment profile**
+   - **Membership type:** **Dynamic Device**
+
+    ![](./media/ex3-36.png)
+
+1. Next to **Dynamic device members**, select **Add dynamic query**.
+
+1. Select **Edit** to switch to the **rule syntax** text box, and enter the following rule:
+
+    >device.enrollmentProfileName -eq "finley-pool-<inject key="DeploymentID" enableCopy="false"/>"
+
+    ![](./media/ex3-37.png)
+
+1. Select **Save**, then select **Create**.
+  
+    ![](./media/ex3-38.png)
+
+    ![](./media/ex3-39.png)
+
+1. Open the group and confirm the following:
+
+   - The membership rule saved exactly as entered.
+   - The group currently has **0 members**.
+
+    ![](./media/ex3-44.png)
+
+1. Switch back to the Microsoft Intune admin center tab.
+
+1. Navigate to **Devices** > **Compliance**, and select your policy **A365-Agent-CloudPC-Compliance-<inject key="DeploymentID" enableCopy="false"/>**.
+
+1. Select **Properties**, then next to **Assignments** select **Edit**.
+
+   ![](./media/ex3-40.png)
+
+1. Under **Included groups**, select **+ Add groups**, choose **A365-Agent-CloudPCs-<inject key="DeploymentID" enableCopy="false"/> (1)**, and select **Select (2)**.
+
+    ![](./media/ex3-41.png)
+ 
+1. Select **Review + save**, then select **Save**.
+
+    ![](./media/ex3-42.png)
+
+1. Confirm the assignment appears on the policy's properties page.
+
+    ![](./media/ex3-43.png)
+
+### Task 5: Require a compliant device for agent sessions and validate
+
+You have defined what a healthy agent device looks like and scoped that definition correctly. It currently has no effect on access. In this task you turn it into an access decision, and then validate that the policy is actually being evaluated.
+
+1. In the Microsoft Entra admin center, in the left navigation pane expand **Entra ID (1)**, select **Conditional Access (2)**, then select **Policies (3)**.
+
+    ![](./media/ex3-45.png)
 
 1. Select **+ New policy**.
 
-1. In the **Name** field, enter:
+1. In the **Name (1)** field, enter:
 
     ```
     CA-Agents-RequireCompliantDevice
     ```
 
-1. Under **Assignments**, select **Users, agents or workload identities**.
+1. Under **Assignments**, select **Users or agents (2)**.
 
-1. Under **What does this policy apply to?**, select **Agents**, then under **Include** select **All agent users (Preview)**.
+1. Under **What does this policy apply to?**, select **Agents (3)**, then under **Include** select **All agent users (Preview) (4)**.
 
-    ![Assignments pane with All agent users selected](./media/a365-ex3-t3-01.png)
+    ![](./media/ex3-46.png)
 
-    >**Note:** This policy targets **agent users**, not agent identities. These are different objects. An agent's user account is a user-like identity that can hold licenses and participate in collaboration, and device compliance is evaluated against it. A policy targeting agent identities does **not** apply to agent user accounts, and vice versa.
+1. Under **Target resources (1)**, select **Include (2)**, then select **All resources (formerly 'All cloud apps') (3)**.
 
-1. Under **Target resources** > **Include**, select **All resources (formerly 'All cloud apps')**.
+    ![](./media/ex3-47.png)
 
-1. Under **Conditions**, select **Agent execution environments (Preview)** and set **Configure** to **Yes**.
+1. Under **Conditions (1)**, select **Agent execution environments (Preview) (2)**, and set **Configure** to **Yes (3)**, and under **Include**, select **Agent user sessions initiated from endpoints (4)** and select **Done (5)**.
 
-1. Under **Include**, select **Agent user sessions initiated from endpoints**.
+    ![](./media/ex3-48.png)
 
-    ![Agent execution environments condition configured for endpoint-initiated sessions](./media/a365-ex3-t3-02.png)
+1. Under **Access controls**, select **Grant (1)**, then select **Grant access (2)**, select **Require device to be marked as compliant (3)**, and select **Select (4)**.
 
-    >**Note:** This condition is the most important setting in this task. Device compliance requires Intune enrollment, which today is only supported on Windows 365 Cloud PCs for Agents. Without this condition scoping the policy to endpoint sessions, every agent running in Microsoft cloud infrastructure would be blocked with **no possible path to compliance**, because those agents have no device at all.
+    ![](./media/ex3-49.png)
 
-1. Under **Access controls** > **Grant**, select **Grant access**, then select **Require device to be marked as compliant**, and select **Select**.
+1. Set **Enable policy** to **Report-only (1)**, then select **Create (2)**.
 
-    ![Grant control pane with Require device to be marked as compliant selected](./media/a365-ex3-t3-03.png)
+    ![](./media/ex3-50.png)
 
-1. Set **Enable policy** to **Report-only**, then select **Create**.
+1. Now validate the policy using the **What If** tool, which models a sign-in and reports which Conditional Access policies would be evaluated for it. In the left navigation pane, under **Conditional Access**, select **Policies**, then select **What If**.
 
-    ![Enable policy toggle set to Report-only before creating the policy](./media/a365-ex3-t3-04.png)
+    ![](./media/ex3-51.png)
 
-1. Confirm the policy appears in your policy list alongside the two policies you created in Exercise 2.
+1. Under **Identity**, configure the following:
 
-    ![Conditional Access policies list showing all three agent policies in report-only mode](./media/a365-ex3-t3-05.png)
+   - **Select identity type:** **Users**
+   - **User:** select **Edit user**, then choose  your own lab account **<inject key="AzureAdUserEmail"></inject> (1)** and select **Select (2)**.
 
-    >**Note:** You now have three report-only agent policies covering three distinct questions: is the agent approved, is the agent risky, and is the agent running on a compliant device. Together these are the core Zero Trust controls for agents.
+     ![](./media/ex3-52.png)
+ 
+1. Under **Target resource**, set **Select target type** to **Cloud apps**, then select **+ Select cloud app**.
 
-1. Optionally, review the related network control. Under **Access controls** > **Grant**, a **Require compliant network** option exists, which uses the Global Secure Access client on the endpoint to supply a network location signal. This requires Microsoft Entra Internet Access.
+1. On the **Resources** pane, in the **Search** box type the following:
 
-### Task 4: Verify Cloud PCs and review session usage
+    ```
+    Office 365
+    ```
 
-By now provisioning should be complete or close to it. In this task you confirm the Cloud PCs exist, are enrolled in Intune, and have sessions available for the agent to consume.
+1. In the results, select the checkbox for **Office 365 Exchange Online**, then select **Select**.
 
-1. Switch to the Microsoft Intune admin center tab.
+    ![](./media/ex3-53.png)
 
-1. In the left navigation pane, select **Devices**, then select **All devices**.
+1. Scroll down to **Sign-in conditions** and set the two required conditions.
 
-1. Locate the devices provisioned by your policy. The **device enrollment profile name** matches your provisioning policy name, **finley-pool-<inject key="DeploymentID" enableCopy="false"/>**.
+   - **Device platform:** **Windows**
+   - **Client app:** **Browser**
 
-    ![All devices page in Intune showing the provisioned Cloud PC for Agents](./media/a365-ex3-t4-01.png)
+    ![](./media/ex3-54.png)
 
-    >**Note:** If no devices appear yet, provisioning is still in progress. Wait a few more minutes and refresh. Provisioning Cloud PCs for Agents takes around 20 to 30 minutes from policy creation.
+1. Leave every remaining condition unset: **Authentication flow**, **Insider risk**, **Sign-in risk**, **User risk**, **IP address**, **Country**, and **Filter for devices**.
 
-1. Select the provisioned device and review its properties, confirming it is enrolled and managed by Intune. This Intune enrollment is what produces the compliance signal that the Conditional Access policy in Task 3 evaluates.
+1. Select **What if** to run the evaluation.
 
-1. Navigate back to **Devices** > **Provision Cloud PCs** > **Provisioning policies (Agents)**.
+1. Review the **Evaluation result**. The output is split across two tabs, **Policies that will apply** and **Policies that will not apply**.
 
-1. Select your policy **finley-pool-<inject key="DeploymentID" enableCopy="false"/>**.
+1. On the **Policies that will apply** tab, note that it reports **0 policies found**.
 
-1. Locate the **Session Usage** section and review the number of **Available sessions**.
+    ![](./media/ex3-55.png)
 
-    ![Provisioning policy detail page showing the Session Usage section with available sessions](./media/a365-ex3-t4-02.png)
+    >**Note:** This is the **correct** result, not a failure. You evaluated a sign-in by a **human user**, and all three of your agent policies are assigned to **Agents**. A human signing in is therefore in scope of none of them. An empty result here is positive evidence that your agent policies do not reach human accounts — which is exactly the scoping precision you want, and exactly the mistake that a policy assigned to All users would have made.
 
-    >**Note:** Available sessions represent capacity the agent can consume. When an agent starts work it claims a session from the pool; when it finishes, the session is released back. This is the **agent session lifecycle**, and it is why a pool of one Cloud PC can serve many sequential agent tasks.
+1. Navigate back to **Conditional Access** > **Policies** and confirm all three of your agent policies now appear together, all in **Report-only**.
 
-1. Review the management options available for this pool. You can **edit** the policy to change image or capacity, and **delete** it to decommission the pool entirely.
+    ![](./media/ex3-56.png)
 
-### Task 5: Delete the provisioning policy (mandatory teardown)
+1. Review what those three policies now cover, which closes the Zero Trust frame you opened in Exercise 2:
 
-This step is required. Cloud PCs continue to bill against the Windows 365 for Agents consumption plan until the provisioning policy is deleted. Leaving the pool running after the lab generates ongoing cost with no benefit.
+    | Policy | Created in | The question it answers |
+    | --- | --- | --- |
+    | Attribute-driven agent policy | Exercise 2 | **Is this agent approved?** |
+    | Risk-based agent policy | Exercise 2 | **Is this agent behaving riskily?** |
+    | **CA-Agents-RequireCompliantDevice** | Exercise 3 | **Is this agent running on a healthy device?** |
 
-1. In the Microsoft Intune admin center, navigate to **Devices** > **Provision Cloud PCs** > **Provisioning policies (Agents)**.
 
-1. Select your policy **finley-pool-<inject key="DeploymentID" enableCopy="false"/>**.
+### Task 6: Apply cost governance and decommission the billing plan
 
-1. Select **Delete**.
+You created a cost meter in Task 2, so you own turning it off. This task is short, but it is not optional.
 
-    ![Provisioning policy page with the Delete option highlighted](./media/a365-ex3-t5-01.png)
+1. Before deleting anything, confirm you understand what actually costs money in Windows 365 for Agents:
 
-1. Confirm the deletion when prompted.
+    | Object | Does it incur cost? |
+    | --- | --- |
+    | **Billing plan** with no provisioning policy | **No.** It is a meter with nothing running against it |
+    | **Provisioning policy** provisioning Cloud PCs | **Yes.** Continuously, from provisioning until the policy is deleted |
+    | Agent **not currently running**, but a pool exists | **Yes.** Cost tracks capacity, not activity |
 
-1. Navigate to **Devices** > **All devices** and confirm the Cloud PCs associated with the policy are being removed.
+    >**Note:** That third row is the one that surprises people. An idle agent does not stop the meter. Cloud PC capacity is billed for as long as it exists, whether or not any agent is claiming a session. Deleting the provisioning policy is the single action that stops consumption — nothing else does, including deleting the agent.
 
-    ![All devices page confirming the Cloud PCs are being deprovisioned](./media/a365-ex3-t5-02.png)
+1. In the Microsoft Intune admin center, navigate to **Devices** > **Manage Windows 365 Cloud PCs** > **Provision Cloud PCs**.
 
-    >**Note:** Treat this as a governance habit, not a lab formality. Orphaned Cloud PC pools are a recurring source of unexplained cloud spend, in the same way that orphaned virtual machines are. Deleting the provisioning policy is the single action that stops consumption.
+1. Confirm the **Provisioning policies (Agents)** list is still empty, so no Cloud PC consumption has accrued in this lab.
+
+    ![](./media/ex3-24.png)
+
+1. Navigate to **Microsoft 365 admin center**.
+ 
+    ```
+    https://admin.microsoft.com/
+    ```
+1. In the left navigation pane, select **Copilot (1)**, then select **Cost management (2)**.
+
+1. At the top of the page, select the classic **Billing & usage (3)** link.
+
+    ![](./media/ex3-6.png)
+
+1. Select **Pay-as-you-go-services** tab, and select Windows 365 for agents.
+
+1. Switch its **Connection status (1)** toggle off and click **Save (2)**. Confirm the row now reads **Disconnected** 
+
+    ![](./media/ex3-57.png)
+
+1. Navigate to **billing policies** tab and select your plan **finley-plan-<inject key="DeploymentID" enableCopy="false"/>**.
+
+1. On Details page, select **Delete billing policy**.
+
+    ![](./media/ex3-58.png)
+
+1. Select Delete when prompted.
+
+1. Confirm the plan no longer appears in the list.
+
+    ![](./media/ex3-59.png)
 
 ## Conclusion
 
-In this exercise you gave Finley a machine to work on and made that machine trustworthy. You confirmed the licensing and billing prerequisites, created a Cloud PC agent pool through an Intune provisioning policy and assigned your agent to it, and used the wait time productively by building a device-compliance Conditional Access policy scoped correctly with the Agent execution environments condition.
+In this exercise you built the governance layer that has to exist before agent compute is safe to grant, and you built all of it before a single device existed.
 
-Two lessons are worth carrying forward. First, that scoping condition is not optional polish; without it, a well-intentioned compliance policy silently breaks every cloud-native agent in the tenant. Second, consumption-billed infrastructure needs an explicit teardown step in every runbook, because nothing else will stop the meter.
+You started with the decision rather than the mechanics: you confirmed Finley had an accountable owner and sponsor, applied the API-first / CUA / RPA framework to conclude that Contoso's API-less expense portal genuinely justifies a desktop, and recorded that conclusion as a custom security attribute so it is queryable across thousands of agents instead of remembered by one person. You then created the Windows 365 for Agents billing plan and learned why agent compute is metered by consumption rather than licensed by seat. You wrote a strict compliance baseline for agent devices, scoped it with a dynamic device group keyed to the enrollment profile name so it can never touch an employee laptop, and enforced it with a Conditional Access policy correctly targeted at agent user accounts and correctly conditioned on endpoint-initiated sessions. Finally, you turned the meter off.
+
+Three lessons are worth carrying forward. First, the **Agent execution environments** condition is not optional polish: without it, a well-intentioned compliance policy silently breaks every cloud-native agent in the tenant, because agents with no device can never become compliant. Second, scoping is what makes strict policy shippable — the baseline you wrote would have been unusable assigned to All devices, and became safe the moment it had a correctly scoped target. Third, consumption-billed compute has no natural end, so teardown belongs in the runbook rather than in someone's memory.
+
+Finley now has an identity from Exercise 1, policy from Exercise 2, and a governed compute model with enforced device posture from this exercise. In Exercise 4 you will ground it in real Microsoft 365 context using Microsoft IQ and publish it through Copilot Studio to Microsoft Teams and Microsoft 365 Copilot.
 
 ## Review
 
 In this exercise, you have completed the following:
 
-- Verified prerequisites and the Windows 365 for Agents billing plan
-- Created a provisioning policy (agents) in Microsoft Intune
-- Required a compliant device for agent user accounts
-- Verified Cloud PCs and reviewed session usage
-- Deleted the provisioning policy
+- Established the compute case for the agent and confirmed its accountability
+- Created the Windows 365 for Agents billing plan and reviewed the agent compute model
+- Defined the compliance baseline for agent Cloud PCs
+- Scoped the baseline to agent devices only
+- Required a compliant device for agent sessions and validated the policy
+- Applied cost governance and decommissioned the billing plan
 
 ## Summary
 
-In this exercise, you provisioned a Cloud PC agent pool using Windows 365 for Agents, assigned your agent identity to it, and enforced device compliance for endpoint-initiated agent sessions using Conditional Access. You then decommissioned the pool to stop consumption billing. Finley now has governed compute available for computer-using scenarios.
+In this exercise, you established a defensible business case for granting an agent desktop compute and recorded it as an auditable custom security attribute. You created a Windows 365 for Agents billing plan and reviewed the Cloud PC agent pool configuration model and agent session lifecycle. You then defined an Intune compliance baseline for agent Cloud PCs, scoped it precisely using an Entra dynamic device group keyed to the enrollment profile name, and enforced it with a Conditional Access policy targeting agent user accounts and conditioned on endpoint-initiated agent sessions — completing the identity, risk, and device triad you began in Exercise 2. Finally, you decommissioned the billing plan while retaining the guardrails, demonstrating a clean agent-compute teardown.
 
 Click **Next** from the lower right corner to move on to the next page.
 

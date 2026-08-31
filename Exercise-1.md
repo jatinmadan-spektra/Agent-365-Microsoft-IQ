@@ -69,7 +69,7 @@ In this task you prepare your tooling. The Agent 365 CLI is a .NET global tool, 
 
     ![](./media/ex1-5.png)
 
-    >**Note:** If `a365` is not recognized, close and reopen PowerShell so the shell picks up the .NET global tools folder on your path.
+    >**Note:** If `a365` is not recognized, close and reopen PowerShell so the shell picks up the .NET global tools folder on your path and re-run the command.
 
 1. Authenticate to Azure. The CLI resolves your tenant from the Azure CLI context, so it needs an authenticated Azure session.
 
@@ -79,7 +79,9 @@ In this task you prepare your tooling. The Agent 365 CLI is a .NET global tool, 
 
     ![](./media/ex1-6.png)
 
-1. A Sign in window appears, select **Work or school account**.
+1. A Sign in window appears, select **Work or school account (1)** and select **continue (2)**.
+
+    ![](./media/ex1-30.png)
 
 1. Sign in with the following credentials:
 
@@ -90,6 +92,8 @@ In this task you prepare your tooling. The Agent 365 CLI is a .NET global tool, 
 1. **Sign in to all apps and websites on this device? pop up appears**, select **No, this app only**.
  
 1. In powershell window if prompted to select a subscription and tenant, press **Enter**.
+
+    ![](./media/ex1-31.png)
 
 1. Return to PowerShell and confirm the correct subscription and tenant are selected:
 
@@ -125,11 +129,13 @@ In this task, you run a single command that does a surprising amount of work: it
     
     ![](./media/ex1-9.png)
 
-    >**Note:** At the **Enter a client app ID, or [C] to create one:** prompt, type **C**.
-
     >**Note:** When prompted to sign in, use the credentials from the **Environment** tab.
 
 1. The CLI opens a browser window requesting admin consent for the permissions the blueprint needs. Review the requested permissions and select **Accept**.
+
+    ![](./media/ex1-32.png)
+
+    >**Note:** At the **Enter a client app ID, or [C] to create one:** prompt, type **C**.
 
 1. The CLI then configures inheritable permissions and pauses at a prompt:
 
