@@ -68,6 +68,14 @@ Copilot Studio is where you define what the agent does and says. This is low-cod
     ```
     ![](./media/ex4-3.png)
 
+> **Congratulations** on completing the task! Now, it's time to validate it. Here are the steps:
+ 
+- Hit the Validate button for the corresponding task. If you receive a success message, you can proceed to the next task. 
+- If not, carefully read the error message and retry the step, following the instructions in the lab guide.
+- If you need any assistance, please contact us at cloudlabs-support@spektrasystems.com. We are available 24/7 to help you out.
+
+   <validation step="03164755-7a12-468e-a0a2-fde740ce3ab0" /> 
+
 ### Task 2: Add a Work IQ MCP tool and test the agent
 
 Right now your agent can talk about expenses but cannot act. In this task you give it a real capability by connecting a Work IQ MCP tool, then prove it works.

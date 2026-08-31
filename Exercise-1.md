@@ -350,6 +350,14 @@ The Microsoft Entra admin center shows you the identity. The **Agent 365 registr
    - The agent's **Permissions**
    - The **Status** of the agent
 
+> **Congratulations** on completing the task! Now, it's time to validate it. Here are the steps:
+ 
+- Hit the Validate button for the corresponding task. If you receive a success message, you can proceed to the next task. 
+- If not, carefully read the error message and retry the step, following the instructions in the lab guide.
+- If you need any assistance, please contact us at cloudlabs-support@spektrasystems.com. We are available 24/7 to help you out.
+
+   <validation step="0b48ecab-3a62-4e46-be64-177308e29afd" /> 
+
 ## Conclusion
 
 In this exercise, you gave Contoso's expense agent a real enterprise identity. You installed and verified the Agent 365 CLI and authenticated to Azure, then used a single `a365 setup all` command to provision an agent identity blueprint together with its blueprint principal, its inheritable Microsoft Graph and Agent 365 permissions, the agent identity itself, and its registry entry. You verified in the Microsoft Entra admin center that the permissions were actually granted rather than left pending, and that the agent identity is linked to the blueprint and visible tenant-wide. You then confirmed the owner and sponsor the CLI recorded on the blueprint and closed the accountability gaps it leaves, adding an owner and sponsor to the agent blueprint principal and an owner to the agent identity. Finally, you confirmed the agent is discoverable in the Agent 365 registry in the Microsoft 365 admin center, with a status of **Available** and no risks.
