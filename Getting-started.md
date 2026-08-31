@@ -18,7 +18,7 @@ Learn how to govern enterprise AI agents across their full lifecycle. By the end
 
 - **Provision an agent identity** : Create an agent identity blueprint and agent identity in Microsoft Entra using the Agent 365 CLI, and establish accountability with owners and sponsors.
 - **Enforce policy conformance** : Review the Agent 365 default policy template, configure tenant guardrails, and build attribute-driven and risk-based Conditional Access policies for agents.
-- **Provision agent compute** : Create a Cloud PC agent pool in Microsoft Intune using Windows 365 for Agents, and require device compliance for agent sessions.
+- **Enable and govern agent compute** : Create a Windows 365 for Agents billing policy, enable the service for your tenant, create an agent user account, and define and enforce the compliance baseline that governs agent devices.
 - **Ground an agent in Microsoft IQ** : Extend an agent with Work IQ MCP tools so it can act on real Microsoft 365 context.
 - **Deploy through governance** : Publish an agent to Microsoft Teams and Microsoft 365 Copilot with admin approval.
 - **Observe and retire** : Trace agent tool calls in Microsoft Defender advanced hunting and run lifecycle actions from the Agent 365 registry.
@@ -32,7 +32,7 @@ Participants should have:
 - **Comfort running commands**: You will run a small number of copy-paste PowerShell and CLI commands. No programming is required.
 - **Understanding of least privilege**: Familiarity with why agents should be granted only the permissions they need.
 
->**Note:** All licenses, directory roles, and the Windows 365 for Agents billing plan have been pre-staged in your lab environment. You do not need to purchase or assign anything.
+>**Note:** All licenses, directory roles, and the Azure subscription and resource group used in this lab have been pre-staged in your lab environment. You do not need to purchase or assign anything. 
 
 ## Architecture
 
@@ -40,11 +40,11 @@ This lab builds a single governed agent across four layers of the Microsoft stac
 
 The **identity layer** (Microsoft Entra Agent ID) issues the agent an enterprise identity derived from an agent identity blueprint, with an owner and a sponsor for accountability. The **governance layer** (Agent 365 in the Microsoft 365 admin center, plus Entra Conditional Access) applies policy templates and access rules that decide what the agent can reach and under what conditions. The **compute layer** (Windows 365 for Agents) provides a compliant, Intune-managed Cloud PC for agents that need to operate a desktop. The **intelligence and surface layer** (Microsoft IQ Work IQ MCP tools, Copilot Studio, and Microsoft Teams) gives the agent real organizational context and a place to do its work, while Microsoft Defender and the Agent 365 registry provide observability and lifecycle control over everything above.
 
-Because one agent flows through all four layers, the policy you write in Exercise 2 is the same policy that governs the Cloud PC in Exercise 3 and the Teams-published agent in Exercise 4.
+Because one agent flows through all four layers, the policy you write in Exercise 2 sits alongside the agent device baseline you build in Exercise 3, and both govern the Teams-published agent in Exercise 4.
 
 ## Architecture Diagram
 
-![Architecture diagram showing the identity, governance, compute, and intelligence layers of Agent 365](./media/a365-gs-architecture.png)
+ ![](./media/arch.png)
 
 ## Explanation of Components
 
@@ -52,56 +52,72 @@ Because one agent flows through all four layers, the policy you write in Exercis
 - **Microsoft Agent 365**: The control plane in the Microsoft 365 admin center for observing, securing, and governing every agent in the tenant. Includes the agent registry, agent settings, and policy templates.
 - **Agent 365 CLI**: Cross-platform command-line tool that provisions the Azure infrastructure and registers the agent blueprint so the agent is accepted by the Agent 365 platform.
 - **Microsoft Intune**: Manages Cloud PCs for Agents through provisioning policies, and supplies the device compliance signal used by Conditional Access.
-- **Windows 365 for Agents**: Provides secure, on-demand Cloud PCs with managed identity and a governed agent session lifecycle, for computer-using agents.
+- **Windows 365 for Agents**: Provides secure, on-demand Cloud PCs with managed identity and a governed agent session lifecycle, for computer-using agents. Metered by a consumption-based billing policy created in Microsoft 365 admin center cost management rather than by seat licences.
+- **Microsoft Graph**: Used in this lab to create the agent user account, the user-like identity parented to an agent identity that holds licences and against which device compliance is evaluated.
 - **Microsoft IQ / Work IQ**: The intelligence layer that grounds agents in real-time organizational context. Work IQ MCP servers expose governed tools for Mail, Calendar, Teams, SharePoint, and more.
 - **Microsoft Copilot Studio**: Low-code environment for authoring agents and attaching tools.
-- **Microsoft Defender XDR**: Provides advanced hunting over agent activity through the `AgentsInfo` table for auditing and investigation.
 
 ## Getting Started with the Lab
+ 
+## Accessing Your Lab Environment
+ 
+Once you are ready to dive in, your virtual machine and **Guide** will be at your fingertips within your web browser.
 
-1. Once the environment is provisioned, a lab guide appears on the right side and the lab virtual machine on the left. Use the lab guide to work through the exercises.
+   ![](./media/labvm.png)
 
-    ![Lab environment showing the lab guide on the right and the virtual machine on the left](./media/a365-gs-01.png)
+## Lab Guide Zoom In/Zoom Out
 
-1. To get the lab environment details, select the **Environment Details** tab. You can also open the **Lab Validation** tab to validate your work as you progress.
+To adjust the zoom level for the environment page, click the **A↕: 100%** icon next to the lab environment's timer.
 
-    ![Environment Details tab showing lab credentials and resource names](./media/a365-gs-02.png)
+   ![](./media/gs-2.png)
 
-1. You can start, stop, and restart the virtual machine from the **Resources** tab if needed.
-
-    ![Resources tab with virtual machine power controls](./media/a365-gs-03.png)
+## Virtual Machine & Lab Guide
+ 
+Your virtual machine is your workhorse throughout the workshop. The lab guide is your roadmap to success.
+ 
+## Exploring Your Lab Resources
+ 
+To get a better understanding of your lab resources and credentials, navigate to the **Environment** tab.
+ 
+  ![](./media/gs-3.png)
+ 
+## Utilizing the Split Window Feature
+ 
+For convenience, you can open the lab guide in a separate window by selecting the **Split Window** button from the top right corner.
+ 
+ ![Use the Split Window Feature](./media/gs-5.png)
+ 
+## Managing Your Virtual Machine
+ 
+Feel free to **Start, Stop, or Restart (2)** your virtual machine as needed from the **Resources (1)** tab. Your experience is in your hands!
+ 
+ ![Manage Your Virtual Machine](./media/gs-4.png)
 
 ### Signing in to Microsoft 365
 
-1. On the lab virtual machine, open **Microsoft Edge** and navigate to the Microsoft 365 admin center.
+1. On the lab virtual machine, open **Microsoft Edge** and navigate to the Azure portal.
 
     ```
-    https://admin.microsoft.com/
+    https://portal.azure.com/
     ```
 
-1. On the **Sign in** page, enter the following credentials:
+1. On the **Sign in** page, enter the following credentials and click **Next**:
 
    - **Email/Username:** <inject key="AzureAdUserEmail"></inject>
 
-      ![Microsoft sign-in page with the username field filled in](./media/a365-gs-04.png)
+      ![](./media/gs-6.png)
 
-1. Next, provide your password:
+1. Next, provide your Temp Access Pass and click **Sign in**:
 
-   - **Password:** <inject key="AzureAdUserPassword"></inject>
+   - **Temp Access Pass:** <inject key="AzureAdUserPassword"></inject>
 
-      ![Microsoft sign-in page with the password field filled in](./media/a365-gs-05.png)
+      ![](./media/gs-7.png)
 
 1. If prompted with **Stay signed in?**, select **Yes**.
 
-    ![Stay signed in prompt with the Yes button highlighted](./media/a365-gs-06.png)
+    ![](./media/gs-8.png)
 
-1. If a **Welcome to Microsoft 365** or first-run dialog appears, close it.
-
->**Note:** Your lab account has been assigned the Global Administrator, Attribute Definition Administrator, and Attribute Assignment Administrator roles. The last two are required because, by default, Global Administrator alone cannot define or assign custom security attributes.
-
-### Lab naming convention
-
-Throughout this lab you will name resources using a unique suffix so they do not collide with other tenants or participants. Wherever you see **finley-<inject key="DeploymentID" enableCopy="false"/>**, use that exact value including the suffix.
+1. If a **Welcome to Azure** dialog appears, close it.
 
 ## Support Contact
 
@@ -112,4 +128,4 @@ The CloudLabs support team is available 24/7/365 to help resolve any issues you 
 
 Now click on **Next** from the lower right corner to move on to the next page.
 
-![Next button in the lower right corner of the lab guide](./media/a365-gs-07.png)
+![](./media/next.png)

@@ -2,49 +2,37 @@
 
 ### Estimated Duration: 60 minutes
 
-Some agents only need APIs. Others must operate a Windows desktop, clicking through applications the way a person would. In this exercise you establish the compute case for Finley, create the Windows 365 for Agents billing plan that meters agent compute, define what a healthy agent device looks like, scope that definition so it never touches employee laptops, and enforce it with Conditional Access.
+Some agents only need APIs. Others must operate a Windows desktop, clicking through applications the way a person would. In this exercise you establish the compute case for Finley, enable Windows 365 for Agents and create the billing policy that meters agent compute, give the agent a user account, define what a healthy agent device looks like, scope that definition so it never touches employee laptops, and enforce it with Conditional Access.
 
 ## Overview
-
-**Windows 365 for Agents** provides AI agents with secure, on-demand Cloud PCs that have a managed identity, device posture, and a governed agent session lifecycle. It exists to support **computer-using agents (CUA)**: agents that complete tasks by operating a desktop environment rather than calling an API.
-
-This matters for Contoso because their legacy expense portal has no API. Finley has to open it, sign in, and enter data through the interface, exactly as a person would. That requires a machine.
-
-But buying the compute is the easy part. The part that decides whether agent compute is safe to deploy is everything that has to be true *before* a Cloud PC is handed to an agent:
-
-- Someone deliberately decided the agent needs a desktop, rather than defaulting to one.
-- The cost meter is created, understood, and owned by a named person.
-- "Healthy" is defined for agent devices, in writing, as policy.
-- That definition is scoped so it governs agent devices and nothing else.
-- Access is denied when a device fails the definition.
-
-In this exercise you build exactly that layer, for the same Finley agent you gave an identity in Exercise 1 and wrote policy for in Exercise 2.
-
-Three concepts to understand before you begin:
-
-- A **Windows 365 for Agents billing plan** is the meter for agent compute. Unlike Windows 365 Enterprise, which is licensed per named user, Windows 365 for Agents is **consumption-billed** against this plan.
-- A **provisioning policy (agents)** in Microsoft Intune defines the configuration used to create Cloud PCs for Agents. In Intune, a provisioning policy (agents) *is* a **Cloud PC agent pool** — the policy and the pool are the same object viewed two ways.
-- The **Agent execution environments** Conditional Access condition restricts a policy so it only applies when an agent session is initiated **from an endpoint**. This is essential: agents running directly in Microsoft infrastructure have no associated device, so without this condition a device-compliance policy would block them with no possible path to compliance.
-
->**Note:** In this exercise you create the billing plan and review the agent pool configuration model, but you do **not** provision Cloud PCs. Every control you build works whether or not a Cloud PC exists yet, which is exactly how governance should be sequenced in production: the guardrail is defined before the resource arrives, not after.
+**Windows 365 for Agents** provides AI agents with secure, on-demand Cloud PCs that have a managed identity, device posture, and a governed session lifecycle. It exists for **computer-using agents (CUA)**: agents that work by operating a desktop rather than calling an API.
+This matters for Contoso because their legacy expense portal has no API. Finley must open it, sign in, and enter data through the interface, exactly as a person would. That requires a machine.
+Buying the compute is the easy part. What decides whether it is safe is everything that must be true *before* a Cloud PC reaches an agent: someone decided the agent needs one, the cost meter is owned, "healthy" is defined for agent devices, that definition is scoped so it never touches employee laptops, and access is denied when a device fails it. You build that layer here, for the Finley agent from Exercises 1 and 2.
+Four things to know before you begin:
+- A **billing policy** is the meter for agent compute, created in Microsoft 365 admin center cost management and bounded by a budget. Windows 365 for Agents is **consumption-billed**, not seat-licensed.
+- **Two switches** must be on before an agent pool can exist: the pay-as-you-go connection, and tenant-level enablement in Microsoft Intune.
+- An **agent user account** is a user-like identity parented to an agent identity. You create one using Microsoft Graph, and it is the object **device compliance is evaluated against**.
+- The **Agent execution environments** condition restricts a Conditional Access policy to agent sessions initiated from an endpoint. Without it, agents running in Microsoft infrastructure can never be compliant — they have no device at all.
+>**Note:** You create the billing policy and review the Cloud PC agent pool model, but you do **not** provision Cloud PCs. Every control here works before a device exists.
 
 ## In this exercise you will
 
 - Establish the compute case for the agent and confirm its accountability
-- Create the Windows 365 for Agents billing plan and review the agent compute model
+- Create a Windows 365 for Agents billing policy and enable the service for your tenant
+- Create an agent user account and review the Cloud PC agent pool configuration model
 - Define the compliance baseline for agent Cloud PCs
 - Scope the baseline so it applies only to agent devices
 - Require a compliant device for agent sessions and validate the policy
-- Apply cost governance and decommission the billing plan
+- Apply cost governance and decommission agent compute
 
 ## Objectives
 
 - **Task 1**: Establish the compute case for the agent and confirm its accountability
-- **Task 2**: Create the Windows 365 for Agents billing plan and review the agent compute model
+- **Task 2**: Enable Windows 365 for Agents and review the agent compute model
 - **Task 3**: Define the compliance baseline for agent Cloud PCs
 - **Task 4**: Scope the baseline to agent devices only
 - **Task 5**: Require a compliant device for agent sessions and validate
-- **Task 6**: Apply cost governance and decommission the billing plan
+- **Task 6**: Apply cost governance and decommission agent compute
 
 ### Task 1: Establish the compute case for the agent and confirm its accountability
 
@@ -140,9 +128,9 @@ Before provisioning any compute, an administrator has to answer two questions: d
 
 1. Select **Save**, then refresh the page and confirm the value persisted.
 
-### Task 2: Create the Windows 365 for Agents billing plan and review the agent compute model
+### Task 2: Enable Windows 365 for Agents and review the agent compute model
 
-Agent compute is metered differently from the rest of Windows 365. In this task you create that meter, then review the pool configuration model that runs on top of it.
+Agent compute is metered differently from the rest of Windows 365, and it has to be switched on in two places before it can be used. In this task you create the meter, enable the service, give Finley a user account, and then review the pool configuration model that runs on top of all of it.
 
 1. Open a new browser tab and navigate to the Microsoft 365 admin center:
 
@@ -519,9 +507,9 @@ You have defined what a healthy agent device looks like and scoped that definiti
     | **CA-Agents-RequireCompliantDevice** | Exercise 3 | **Is this agent running on a healthy device?** |
 
 
-### Task 6: Apply cost governance and decommission the billing plan
+### Task 6: Apply cost governance and decommission agent compute
 
-You created a cost meter in Task 2, so you own turning it off. This task is short, but it is not optional.
+You created a cost meter in Task 2, so you own turning it off. Two things have to be reversed: the pay-as-you-go connection and the billing policy itself. This task is short, but it is not optional.
 
 1. Before deleting anything, confirm you understand what actually costs money in Windows 365 for Agents:
 
@@ -569,30 +557,27 @@ You created a cost meter in Task 2, so you own turning it off. This task is shor
     ![](./media/ex3-59.png)
 
 ## Conclusion
-
-In this exercise you built the governance layer that has to exist before agent compute is safe to grant, and you built all of it before a single device existed.
-
-You started with the decision rather than the mechanics: you confirmed Finley had an accountable owner and sponsor, applied the API-first / CUA / RPA framework to conclude that Contoso's API-less expense portal genuinely justifies a desktop, and recorded that conclusion as a custom security attribute so it is queryable across thousands of agents instead of remembered by one person. You then created the Windows 365 for Agents billing plan and learned why agent compute is metered by consumption rather than licensed by seat. You wrote a strict compliance baseline for agent devices, scoped it with a dynamic device group keyed to the enrollment profile name so it can never touch an employee laptop, and enforced it with a Conditional Access policy correctly targeted at agent user accounts and correctly conditioned on endpoint-initiated sessions. Finally, you turned the meter off.
-
-Three lessons are worth carrying forward. First, the **Agent execution environments** condition is not optional polish: without it, a well-intentioned compliance policy silently breaks every cloud-native agent in the tenant, because agents with no device can never become compliant. Second, scoping is what makes strict policy shippable — the baseline you wrote would have been unusable assigned to All devices, and became safe the moment it had a correctly scoped target. Third, consumption-billed compute has no natural end, so teardown belongs in the runbook rather than in someone's memory.
-
-Finley now has an identity from Exercise 1, policy from Exercise 2, and a governed compute model with enforced device posture from this exercise. In Exercise 4 you will ground it in real Microsoft 365 context using Microsoft IQ and publish it through Copilot Studio to Microsoft Teams and Microsoft 365 Copilot.
+In this exercise you built the governance layer that must exist before agent compute is safe to grant — all of it before a single device existed.
+You began with the decision rather than the mechanics: you confirmed Finley's owner, applied the API-first / CUA / RPA framework to conclude that Contoso's API-less expense portal justifies a desktop, and recorded that conclusion as a custom security attribute so it is queryable rather than remembered. You then made agent compute available — a billing policy bounded by a budget, the pay-as-you-go connection, tenant-level enablement, and an agent user account created through Microsoft Graph — and reviewed the agent pool model without provisioning a machine. Finally you defined a compliance baseline, scoped it to agent devices with a dynamic device group, enforced it with Conditional Access, and turned the meter off.
+Three lessons carry forward. First, the **Agent execution environments** condition is not optional polish: without it, a well-meant compliance policy silently breaks every cloud-native agent in the tenant. Second, agent identities and agent user accounts are different objects, and a policy aimed at the wrong one enforces nothing while appearing correct. Third, consumption-billed compute has no natural end, so teardown belongs in the runbook.
+Finley now has an identity from Exercise 1, policy from Exercise 2, and governed compute from this exercise. Exercise 4 grounds it in Microsoft 365 context with Microsoft IQ and publishes it to Teams and Microsoft 365 Copilot.
 
 ## Review
 
 In this exercise, you have completed the following:
 
 - Established the compute case for the agent and confirmed its accountability
-- Created the Windows 365 for Agents billing plan and reviewed the agent compute model
+- Created a Windows 365 for Agents billing policy with a budget, and enabled the service for the tenant
+- Created an agent user account and reviewed the Cloud PC agent pool configuration model
 - Defined the compliance baseline for agent Cloud PCs
 - Scoped the baseline to agent devices only
 - Required a compliant device for agent sessions and validated the policy
-- Applied cost governance and decommissioned the billing plan
+- Applied cost governance and decommissioned agent compute
 
 ## Summary
 
-In this exercise, you established a defensible business case for granting an agent desktop compute and recorded it as an auditable custom security attribute. You created a Windows 365 for Agents billing plan and reviewed the Cloud PC agent pool configuration model and agent session lifecycle. You then defined an Intune compliance baseline for agent Cloud PCs, scoped it precisely using an Entra dynamic device group keyed to the enrollment profile name, and enforced it with a Conditional Access policy targeting agent user accounts and conditioned on endpoint-initiated agent sessions — completing the identity, risk, and device triad you began in Exercise 2. Finally, you decommissioned the billing plan while retaining the guardrails, demonstrating a clean agent-compute teardown.
+In this exercise, you established a defensible business case for granting an agent desktop compute and recorded it as an auditable custom security attribute. You created a Windows 365 for Agents billing policy backed by an Azure subscription and bounded by a budget, connected the pay-as-you-go service, enabled Windows 365 for Agents for your tenant, and created an agent user account for Finley using Microsoft Graph. You reviewed the Cloud PC agent pool configuration model and the agent session lifecycle without provisioning a machine. You then defined an Intune compliance baseline for agent Cloud PCs, scoped it precisely using an Entra dynamic device group keyed to the enrollment profile name, and enforced it with a Conditional Access policy targeting agent user accounts and conditioned on endpoint-initiated agent sessions — completing the identity, risk, and device triad you began in Exercise 2. Finally, you disconnected the service and deleted the billing policy while retaining the guardrails, demonstrating a clean agent-compute teardown.
 
 Click **Next** from the lower right corner to move on to the next page.
 
-![Next button in the lower right corner of the lab guide](./media/a365-gs-07.png)
+![](./media/next.png)
