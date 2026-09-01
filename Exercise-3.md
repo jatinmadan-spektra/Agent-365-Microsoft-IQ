@@ -15,6 +15,33 @@ Four things to know before you begin:
 - The **Agent execution environments** condition restricts a Conditional Access policy to agent sessions initiated from an endpoint. Without it, agents running in Microsoft infrastructure can never be compliant — they have no device at all.
 >**Note:** You create the billing policy and review the Cloud PC agent pool model, but you do **not** provision Cloud PCs. Every control here works before a device exists.
 
+## Pre - Requisites for the exercise
+
+### Microsoft Entra roles required
+
+| Role | Needed for |
+| --- | --- |
+| **Intune Administrator** or **Windows 365 Administrator** | Viewing the **Provision Cloud PCs** blades and verifying Cloud PCs in Intune |
+
+>**Important:** **Global Administrator is not sufficient for the Cloud PC blades.**  *"You must be an **Intune Administrator** in Microsoft Entra ID or **Windows 365 Administrator** to provision Cloud PCs."*  Without one of those two roles, the **Provision Cloud PCs** page shows the banner *"Unauthorized: You don't have the right admin permissions to see this information"* and **Create policy (Agents)** is greyed out.
+
+Assign the role before you begin:
+
+1. Sign in to the 
+   ```
+   https://entra.microsoft.com
+   ```
+1. Go to **Entra ID** > **Users** > **All users** and select your lab account.
+1. In the left menu select **Assigned roles**, then select **+ Add assignments**.
+1. Select **Intune Administrator** and **Windows 365 Administrator**, then select **Add**.
+1. **Sign out and sign back in.** Roles are written into your access token at sign-in, so a current session will not pick them up.
+
+### Windows 365 Registeration
+
+1. In the [Azure portal](https://portal.azure.com), go to **Subscriptions** and select the lab subscription.
+1. In the subscription, select **Resource providers**, search for **Windows365**, select **Microsoft.Windows365**, and confirm the status is **Registered**. If it shows **NotRegistered**, select **Register** and wait one to two minutes.
+
+
 ## In this exercise you will
 
 - Establish the compute case for the agent and confirm its accountability
